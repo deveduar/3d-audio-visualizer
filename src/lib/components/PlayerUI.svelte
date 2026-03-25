@@ -13,7 +13,7 @@
     let displayProgress = $state(0);
     let displayTime = $state(0);
     
-    onMount(async () => {
+    onMount(() => {
         volume.subscribe(v => volumeValue = v);
         autoPlay.subscribe(v => autoPlayEnabled = v);
         repeat.subscribe(v => repeatEnabled = v);
@@ -32,9 +32,10 @@
             }
         });
         
-        await loadStaticTracks();
-        initialized = true;
-        loading = false;
+        loadStaticTracks().then(() => {
+            initialized = true;
+            loading = false;
+        });
         
         return () => {
             unsub();
