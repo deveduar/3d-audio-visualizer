@@ -105,9 +105,9 @@
                         <button class="track-btn" onclick={() => handleTrackSelect(index)}>
                             <span class="playing-indicator">
                                 {#if index === $currentIndex && $isPlaying}
-                                    PLAY
-                                {:else if index === $currentIndex}
                                     LIVE
+                                {:else if index === $currentIndex}
+                                    PLAY
                                 {:else}
                                     {index + 1}
                                 {/if}
@@ -137,7 +137,7 @@
         width: 280px;
         background: rgba(0, 0, 0, 0.85);
         backdrop-filter: blur(10px);
-        z-index: 200;
+        z-index: 80;
         transition: transform 0.3s ease;
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }

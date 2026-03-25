@@ -143,11 +143,11 @@
             <button class="mode-btn" class:active={repeatEnabled} onclick={handleToggleRepeat} title="Repeat">
                 LOOP
             </button>
-            <button class="nav-btn" onclick={handlePrev}>PREV</button>
+            <button class="nav-btn icon-btn" onclick={handlePrev} aria-label="Previous track">⏮</button>
             <button class="play-btn" onclick={handlePlay}>
-                {$isPlaying ? 'PAUSE' : 'PLAY'}
+                {$isPlaying ? '⏸' : '▶'}
             </button>
-            <button class="nav-btn" onclick={handleNext}>NEXT</button>
+            <button class="nav-btn icon-btn" onclick={handleNext} aria-label="Next track">⏭</button>
             <button class="mode-btn" class:active={autoPlayEnabled} onclick={toggleAutoPlay} title="Auto-play">
                 AUTO
             </button>
@@ -256,17 +256,22 @@
         opacity: 1;
     }
 
+    .icon-btn {
+        font-size: 18px;
+        letter-spacing: 0;
+        line-height: 1;
+    }
+
     .play-btn {
         background: white;
         color: black;
         border: none;
-        min-width: 68px;
+        width: 52px;
         height: 44px;
         border-radius: 999px;
-        font-size: 11px;
-        letter-spacing: 0.14em;
+        font-size: 18px;
         cursor: pointer;
-        padding: 0 16px;
+        padding: 0;
     }
 
     .play-btn:hover {

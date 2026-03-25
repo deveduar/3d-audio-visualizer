@@ -31,11 +31,24 @@ let pausePosition = 0;
 let playbackOffset = 0;
 let stopIntent: 'none' | 'pause' | 'seek' | 'track-change' = 'none';
 let lufsHistory: number[] = [];
+let operationId = 0;
+let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function resetPlaybackPosition(time = 0): void {
     playbackOffset = time;
     pausePosition = time;
     currentTime.set(time);
+}
+
+function releaseTransition(delay = 200): void {
+    if (transitionTimeout) {
+        clearTimeout(transitionTimeout);
+    }
+
+    transitionTimeout = setTimeout(() => {
+        isTransitioning = false;
+        transitionTimeout = null;
+    }, delay);
 }
 
 export async function initAudio(): Promise<void> {
@@ -83,8 +96,9 @@ export async function initAudio(): Promise<void> {
                     currentIndex.set(nextIndex);
 
                     setTimeout(async () => {
-                        await loadCurrentTrack();
-                        if (player && loaded) {
+                        const requestId = ++operationId;
+                        const didLoad = await loadCurrentTrack(requestId);
+                        if (didLoad && player && loaded && requestId === operationId) {
                             try {
                                 playbackOffset = 0;
                                 player.start(0, 0);
@@ -104,12 +118,12 @@ export async function initAudio(): Promise<void> {
     startLoop();
 }
 
-export async function loadCurrentTrack(): Promise<void> {
+export async function loadCurrentTrack(requestId = ++operationId): Promise<boolean> {
     const $tracks = get(tracks);
     const $currentIndex = get(currentIndex);
     const track = $tracks[$currentIndex];
     
-    if (!track || !player) return;
+    if (!track || !player) return false;
     
     try {
         stopIntent = 'track-change';
@@ -129,12 +143,17 @@ export async function loadCurrentTrack(): Promise<void> {
     waveformData.set(null);
     
     await player.load(track.url);
+
+    if (requestId !== operationId) {
+        return false;
+    }
     
     const dur = player.buffer.duration;
     duration.set(dur);
     loaded = true;
     
     player.loop = get(repeat);
+    return true;
 }
 
 export async function togglePlay(): Promise<void> {
@@ -158,7 +177,11 @@ export async function togglePlay(): Promise<void> {
     if ($tracks.length === 0) return;
     
     if (!loaded || !player?.buffer.loaded) {
-        await loadCurrentTrack();
+        const didLoad = await loadCurrentTrack();
+        if (!didLoad) {
+            isTransitioning = false;
+            return;
+        }
     }
     
     if (!player) return;
@@ -184,7 +207,7 @@ export async function togglePlay(): Promise<void> {
         }
     }
     
-    setTimeout(() => { isTransitioning = false; }, 200);
+    releaseTransition();
 }
 
 export async function seek(time: number): Promise<void> {
@@ -226,9 +249,9 @@ export async function seek(time: number): Promise<void> {
         transport.seconds = 0;
     }
     
+    releaseTransition(100);
     setTimeout(() => {
         isSeeking = false;
-        isTransitioning = false;
     }, 100);
 }
 
@@ -339,12 +362,17 @@ export function cleanup(): void {
     loaded = false;
     lufsHistory = [];
     waveformData.set(null);
+    if (transitionTimeout) {
+        clearTimeout(transitionTimeout);
+        transitionTimeout = null;
+    }
 }
 
 export async function playTrackAt(index: number): Promise<void> {
     const $tracks = get(tracks);
     if (index < 0 || index >= $tracks.length) return;
-    
+
+    const requestId = ++operationId;
     isTransitioning = true;
     
     resetPlaybackPosition(0);
@@ -362,18 +390,20 @@ export async function playTrackAt(index: number): Promise<void> {
     
     currentIndex.set(index);
     
-    await loadCurrentTrack();
-    
-    await new Promise(r => setTimeout(r, 150));
-    
-    if (player && loaded) {
+    const didLoad = await loadCurrentTrack(requestId);
+    if (!didLoad || requestId !== operationId) {
+        releaseTransition();
+        return;
+    }
+
+    if (player && loaded && requestId === operationId) {
         try {
-            player.start();
+            player.start(0, 0);
             isPlaying.set(true);
         } catch (e) {
             console.error('playTrackAt error:', e);
         }
     }
     
-    setTimeout(() => { isTransitioning = false; }, 200);
+    releaseTransition();
 }
