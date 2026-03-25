@@ -19,6 +19,8 @@ export const bass = writable(0);
 export const mid = writable(0);
 export const treble = writable(0);
 export const waveformData = writable<Float32Array | null>(null);
+export const autoPlay = writable(true);
+export const repeat = writable(false);
 
 export const currentTrack = derived(
     [tracks, currentIndex],
@@ -29,7 +31,8 @@ let objectUrls: string[] = [];
 
 const STATIC_TRACKS = [
     '/track.mp3',
-    '/lain drop_26.mp3'
+    '/lain drop_26.mp3',
+    '/time every3_1554.mp3'
 ];
 
 export async function loadStaticTracks(): Promise<void> {

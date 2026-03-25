@@ -1,19 +1,53 @@
 <script lang="ts">
-    import { isPlaying, currentTime, duration, volume, currentTrack, playNext, playPrev, loadStaticTracks, tracks } from '$lib/stores/playlistStore';
-    import { togglePlay, seek, setVolume, initAudio, loadCurrentTrack } from '$lib/stores/audioEngine';
+    import { isPlaying, currentTime, duration, volume, currentTrack, loadStaticTracks, autoPlay, repeat, tracks, currentIndex } from '$lib/stores/playlistStore';
+    import { togglePlay, seek, setVolume, playTrackAt, toggleRepeatMode } from '$lib/stores/audioEngine';
     import { onMount } from 'svelte';
+    import { get } from 'svelte/store';
     
     let volumeValue = $state(0.8);
     let initialized = $state(false);
     let loading = $state(true);
+    let autoPlayEnabled = $state(true);
+    let repeatEnabled = $state(false);
+    let isDragging = $state(false);
+    let displayProgress = $state(0);
+    let displayTime = $state(0);
     
     onMount(async () => {
         volume.subscribe(v => volumeValue = v);
+        autoPlay.subscribe(v => autoPlayEnabled = v);
+        repeat.subscribe(v => repeatEnabled = v);
+        
+        const unsub = currentTime.subscribe(t => {
+            const dur = get(duration);
+            if (dur > 0 && !isDragging) {
+                displayProgress = t / dur;
+                displayTime = t;
+            }
+        });
+        
+        duration.subscribe(d => {
+            if (d > 0 && !isDragging && displayProgress === 0) {
+                displayProgress = displayTime / d;
+            }
+        });
         
         await loadStaticTracks();
         initialized = true;
         loading = false;
+        
+        return () => {
+            unsub();
+        };
     });
+    
+    function toggleAutoPlay() {
+        autoPlay.update(v => !v);
+    }
+    
+    function handleToggleRepeat() {
+        toggleRepeatMode();
+    }
     
     async function handlePlay() {
         if (!initialized) return;
@@ -21,28 +55,40 @@
     }
     
     async function handlePrev() {
-        await playPrev();
+        const tracksVal = get(tracks);
+        const currentIndexVal = get(currentIndex);
+        if (tracksVal.length > 0) {
+            const newIndex = currentIndexVal === 0 ? tracksVal.length - 1 : currentIndexVal - 1;
+            await playTrackAt(newIndex);
+        }
     }
     
     async function handleNext() {
-        await playNext();
-    }
-    
-    async function handleProgressClick(e: MouseEvent) {
-        if (!$duration) return;
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const percent = x / rect.width;
-        await seek(Math.max(0, Math.min(1, percent)));
-    }
-    
-    async function handleProgressKey(e: KeyboardEvent) {
-        if (!$duration) return;
-        if (e.key === 'ArrowRight') {
-            await seek(($currentTime / $duration) + 0.05);
-        } else if (e.key === 'ArrowLeft') {
-            await seek(($currentTime / $duration) - 0.05);
+        const tracksVal = get(tracks);
+        const currentIndexVal = get(currentIndex);
+        if (tracksVal.length > 0) {
+            const newIndex = (currentIndexVal + 1) % tracksVal.length;
+            await playTrackAt(newIndex);
         }
+    }
+    
+    function handleProgressInput(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const percent = parseFloat(target.value);
+        displayProgress = percent;
+        
+        const durVal = get(duration);
+        displayTime = percent * durVal;
+        isDragging = true;
+    }
+    
+    async function handleProgressChange(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const percent = parseFloat(target.value);
+        const durVal = get(duration);
+        const time = percent * durVal;
+        await seek(time);
+        isDragging = false;
     }
     
     function handleVolume(e: Event) {
@@ -58,34 +104,55 @@
         const s = Math.floor(t % 60);
         return `${m}:${s < 10 ? '0' + s : s}`;
     }
-    
-    function getProgress(): number {
-        if (!$duration) return 0;
-        return ($currentTime / $duration) * 100;
-    }
 </script>
 
 <div class="ui">
-    <div class="progress-bar" onclick={handleProgressClick} onkeydown={handleProgressKey} role="slider" tabindex="0" aria-label="Progress" aria-valuenow={$currentTime} aria-valuemin={0} aria-valuemax={$duration}>
-        <div class="progress-fill" style="width: {getProgress()}%"></div>
+    <div class="progress-bar">
+        <input 
+            type="range" 
+            class="progress-slider"
+            min="0" 
+            max="1" 
+            step="0.001"
+            value={displayProgress}
+            oninput={handleProgressInput}
+            onchange={handleProgressChange}
+            style="width: 100%;"
+        />
     </div>
     
     <div class="main">
         <div class="track-info">
             <span class="track-name">{loading ? 'Loading...' : $currentTrack?.name || 'No track loaded'}</span>
             <div class="time-display">
-                <span>{formatTime($currentTime)}</span>
+                <span>{formatTime(displayTime)}</span>
                 <span class="separator">/</span>
                 <span>{formatTime($duration)}</span>
             </div>
         </div>
         
         <div class="controls">
+            <button 
+                class="mode-btn" 
+                class:active={repeatEnabled}
+                onclick={handleToggleRepeat}
+                title="Repeat"
+            >
+                ⟲
+            </button>
             <button class="nav-btn" onclick={handlePrev}>⏮</button>
             <button class="play-btn" onclick={handlePlay}>
                 {$isPlaying ? '⏸' : '▶'}
             </button>
             <button class="nav-btn" onclick={handleNext}>⏭</button>
+            <button 
+                class="mode-btn" 
+                class:active={autoPlayEnabled}
+                onclick={toggleAutoPlay}
+                title="Auto-play"
+            >
+                ⟳
+            </button>
         </div>
         
         <div class="volume-control">
@@ -117,15 +184,31 @@
     
     .progress-bar {
         width: 100%;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 0;
+    }
+    
+    .progress-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
         height: 4px;
         background: rgba(255,255,255,0.2);
+        border-radius: 2px;
         cursor: pointer;
     }
     
-    .progress-fill {
-        height: 100%;
+    .progress-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
         background: white;
-        transition: width 0.1s linear;
+        border-radius: 50%;
+        cursor: pointer;
     }
     
     .main {
@@ -193,6 +276,28 @@
     }
     
     .play-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .mode-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        opacity: 0.4;
+        padding: 8px;
+    }
+    
+    .mode-btn.active {
+        opacity: 1;
+    }
+    
+    .mode-btn:hover {
+        opacity: 0.8;
+    }
+    
+    .mode-btn.active:hover {
         transform: scale(1.1);
     }
     

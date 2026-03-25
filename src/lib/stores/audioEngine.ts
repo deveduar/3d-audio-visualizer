@@ -11,8 +11,8 @@ import {
     bass,
     mid,
     treble,
-    currentTrack,
-    playNext
+    autoPlay,
+    repeat
 } from './playlistStore';
 
 let player: Tone.Player | null = null;
@@ -22,13 +22,21 @@ let analyser: Tone.Analyser | null = null;
 let animationId: number | null = null;
 let loaded = false;
 
+let isTransitioning = false;
+let isSeeking = false;
+let seekOffset = 0;
+let pausePosition = 0;
+let lastSeekTime = 0;
+
 export async function initAudio(): Promise<void> {
-    if (Tone.context.state !== 'running') {
+    const context = Tone.getContext();
+    if (context.state !== 'running') {
         await Tone.start();
     }
     
-    if (Tone.Transport.state !== 'started') {
-        Tone.Transport.start();
+    const transport = Tone.getTransport();
+    if (transport.state !== 'started') {
+        transport.start();
     }
     
     limiter = new Tone.Limiter(-1).toDestination();
@@ -42,96 +50,148 @@ export async function initAudio(): Promise<void> {
     
     player.chain(limiter, meter, analyser, Tone.Destination);
     
+    player.onstop = () => {
+        if (!isTransitioning && !isSeeking) {
+            const repeatEnabled = get(repeat);
+            
+            if (!repeatEnabled) {
+                if (get(isPlaying) && get(autoPlay)) {
+                    setTimeout(() => {
+                        const $tracks = get(tracks);
+                        const $currentIndex = get(currentIndex);
+                        if ($tracks.length > 0) {
+                            isTransitioning = true;
+                            currentIndex.set(($currentIndex + 1) % $tracks.length);
+                            setTimeout(() => { isTransitioning = false; }, 200);
+                        }
+                    }, 100);
+                } else if (get(isPlaying) && !get(autoPlay)) {
+                    isPlaying.set(false);
+                }
+            }
+        }
+    };
+    
     startLoop();
 }
 
-let trackStartTime = 0;
-let pausedPosition = 0;
-
-export async function loadCurrentTrack(keepPosition = false): Promise<void> {
+export async function loadCurrentTrack(): Promise<void> {
     const $tracks = get(tracks);
     const $currentIndex = get(currentIndex);
     const track = $tracks[$currentIndex];
     
     if (!track || !player) return;
     
-    const wasPlaying = player.state === 'started';
-    const previousPosition = wasPlaying ? Tone.Transport.seconds - trackStartTime : pausedPosition;
+    try {
+        player.stop();
+    } catch (e) {}
     
     loaded = false;
     isPlaying.set(false);
     currentTime.set(0);
-    
-    if (!keepPosition) {
-        pausedPosition = 0;
-        trackStartTime = 0;
-    }
+    pausePosition = 0;
+    seekOffset = 0;
+    lastSeekTime = 0;
     
     await player.load(track.url);
     
-    duration.set(player.buffer.duration);
+    const dur = player.buffer.duration;
+    duration.set(dur);
     loaded = true;
     
-    if (keepPosition && previousPosition > 0 && previousPosition < player.buffer.duration) {
-        pausedPosition = previousPosition;
-        currentTime.set(previousPosition);
-    }
+    player.loop = get(repeat);
 }
 
 export async function togglePlay(): Promise<void> {
+    if (isTransitioning) return;
+    
     if (!player) {
         await initAudio();
     }
     
-    if (Tone.context.state !== 'running') {
+    const context = Tone.getContext();
+    if (context.state !== 'running') {
         await Tone.start();
     }
     
-    if (Tone.Transport.state !== 'started') {
-        Tone.Transport.start();
+    const transport = Tone.getTransport();
+    if (transport.state !== 'started') {
+        transport.start();
     }
     
     const $tracks = get(tracks);
-    const $currentIndex = get(currentIndex);
-    
     if ($tracks.length === 0) return;
     
     if (!loaded || !player?.buffer.loaded) {
         await loadCurrentTrack();
     }
     
-    if (player && player.state === 'started') {
-        pausedPosition = Tone.Transport.seconds - trackStartTime;
+    if (!player) return;
+    
+    isTransitioning = true;
+    
+    if (player.state === 'started') {
+        pausePosition = transport.seconds;
         player.stop();
         isPlaying.set(false);
-    } else if (player) {
-        player.start(undefined, pausedPosition);
-        trackStartTime = Tone.Transport.seconds - pausedPosition;
-        isPlaying.set(true);
+    } else {
+        try {
+            const startPos = pausePosition > 0 ? pausePosition : 0;
+            transport.cancel();
+            transport.seconds = startPos;
+            player.start(0, startPos);
+            isPlaying.set(true);
+        } catch (e) {
+            console.error('Play error:', e);
+        }
     }
+    
+    setTimeout(() => { isTransitioning = false; }, 200);
 }
 
-export async function seek(percent: number): Promise<void> {
+export async function seek(time: number): Promise<void> {
+    if (isTransitioning || isSeeking || !player || !loaded) return;
+    
     const $duration = get(duration);
     if (!$duration || $duration <= 0) return;
     
-    const time = Math.max(0, Math.min(percent * $duration, $duration));
+    const clampedTime = Math.max(0, Math.min(time, $duration));
+    const wasPlaying = player.state === 'started';
     
-    pausedPosition = time;
-    currentTime.set(time);
+    isSeeking = true;
+    isTransitioning = true;
+    lastSeekTime = clampedTime;
     
-    if (player && loaded) {
+    if (wasPlaying) {
         try {
-            if (player.state === 'started') {
-                player.stop();
-            }
-            player.start(undefined, time);
-            trackStartTime = Tone.Transport.seconds - time;
+            player.stop();
+        } catch (e) {}
+        
+        await new Promise(r => setTimeout(r, 100));
+        
+        const transport = Tone.getTransport();
+        transport.cancel();
+        transport.seconds = 0;
+        
+        try {
+            player.start(0, clampedTime);
             isPlaying.set(true);
+            currentTime.set(clampedTime);
         } catch (e) {
-            console.error('Seek error:', e);
+            console.error('Seek start error:', e);
         }
+    } else {
+        seekOffset = clampedTime;
+        const transport = Tone.getTransport();
+        transport.cancel();
+        transport.seconds = 0;
+        currentTime.set(clampedTime);
     }
+    
+    setTimeout(() => {
+        isSeeking = false;
+        isTransitioning = false;
+    }, 100);
 }
 
 export function setVolume(val: number): void {
@@ -141,19 +201,32 @@ export function setVolume(val: number): void {
     volume.set(val);
 }
 
+export function toggleRepeatMode(): void {
+    const newValue = !get(repeat);
+    repeat.set(newValue);
+    if (player) {
+        player.loop = newValue;
+    }
+}
+
 function startLoop(): void {
     function loop(): void {
-        if (player) {
-            if (player.state === 'started') {
-                const position = Tone.Transport.seconds - trackStartTime;
-                currentTime.set(position);
-                
-                const bufDur = player.buffer.duration;
-                if (position >= bufDur && bufDur > 0) {
-                    isPlaying.set(false);
-                    currentTime.set(0);
-                    trackStartTime = 0;
-                    playNext();
+        if (player && loaded) {
+            const bufDur = player.buffer.duration;
+            if (bufDur > 0) {
+                if (player.state === 'started') {
+                    const transport = Tone.getTransport();
+                    let pos = transport.seconds + lastSeekTime;
+                    if (pos > bufDur) pos = bufDur;
+                    if (pos < 0) pos = 0;
+                    currentTime.set(pos);
+                    
+                    if (pos >= bufDur - 0.1 && player.loop) {
+                        lastSeekTime = 0;
+                        currentTime.set(0);
+                    }
+                } else if (seekOffset > 0 && !isSeeking) {
+                    currentTime.set(seekOffset);
                 }
             }
         }
@@ -200,7 +273,6 @@ export function cleanup(): void {
         animationId = null;
     }
     if (player) {
-        player.stop();
         player.dispose();
         player = null;
     }
@@ -219,21 +291,31 @@ export function cleanup(): void {
     loaded = false;
 }
 
-let isChangingTrack = false;
-
-currentIndex.subscribe(async () => {
-    if (isChangingTrack) return;
-    isChangingTrack = true;
+export async function playTrackAt(index: number): Promise<void> {
+    const $tracks = get(tracks);
+    if (index < 0 || index >= $tracks.length) return;
     
-    const wasPlaying = get(isPlaying);
-    if (player && get(tracks).length > 0) {
-        await loadCurrentTrack(true);
-        if (wasPlaying && player && loaded) {
+    isTransitioning = true;
+    
+    if (player && player.state === 'started') {
+        try {
+            player.stop();
+        } catch (e) {}
+    }
+    
+    currentIndex.set(index);
+    await loadCurrentTrack();
+    
+    await new Promise(r => setTimeout(r, 100));
+    
+    if (player && loaded) {
+        try {
             player.start();
-            trackStartTime = Tone.Transport.seconds;
             isPlaying.set(true);
+        } catch (e) {
+            console.error('playTrackAt error:', e);
         }
     }
     
-    isChangingTrack = false;
-});
+    setTimeout(() => { isTransitioning = false; }, 200);
+}
