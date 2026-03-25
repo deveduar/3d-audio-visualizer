@@ -18,6 +18,8 @@ export const rms = writable(0);
 export const bass = writable(0);
 export const mid = writable(0);
 export const treble = writable(0);
+export const dbLevel = writable(-60);
+export const lufs = writable(-60);
 export const waveformData = writable<Float32Array | null>(null);
 export const autoPlay = writable(true);
 export const repeat = writable(false);
@@ -116,6 +118,35 @@ export function playTrack(index: number): void {
     }
 }
 
+export function moveTrack(fromIndex: number, toIndex: number): void {
+    tracks.update(($tracks) => {
+        if (
+            fromIndex < 0 ||
+            toIndex < 0 ||
+            fromIndex >= $tracks.length ||
+            toIndex >= $tracks.length ||
+            fromIndex === toIndex
+        ) {
+            return $tracks;
+        }
+
+        const reordered = [...$tracks];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+
+        const current = get(currentIndex);
+        if (current === fromIndex) {
+            currentIndex.set(toIndex);
+        } else if (fromIndex < current && toIndex >= current) {
+            currentIndex.set(current - 1);
+        } else if (fromIndex > current && toIndex <= current) {
+            currentIndex.set(current + 1);
+        }
+
+        return reordered;
+    });
+}
+
 export function cleanup(): void {
     objectUrls.forEach(url => URL.revokeObjectURL(url));
     objectUrls = [];
@@ -124,4 +155,11 @@ export function cleanup(): void {
     isPlaying.set(false);
     currentTime.set(0);
     duration.set(0);
+    rms.set(0);
+    bass.set(0);
+    mid.set(0);
+    treble.set(0);
+    dbLevel.set(-60);
+    lufs.set(-60);
+    waveformData.set(null);
 }

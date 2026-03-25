@@ -11,6 +11,9 @@ import {
     bass,
     mid,
     treble,
+    dbLevel,
+    lufs,
+    waveformData,
     autoPlay,
     repeat
 } from './playlistStore';
@@ -27,6 +30,7 @@ let isSeeking = false;
 let pausePosition = 0;
 let playbackOffset = 0;
 let stopIntent: 'none' | 'pause' | 'seek' | 'track-change' = 'none';
+let lufsHistory: number[] = [];
 
 function resetPlaybackPosition(time = 0): void {
     playbackOffset = time;
@@ -47,7 +51,7 @@ export async function initAudio(): Promise<void> {
     
     limiter = new Tone.Limiter(-1).toDestination();
     meter = new Tone.Meter();
-    analyser = new Tone.Analyser('fft', 512);
+    analyser = new Tone.Analyser('waveform', 512);
     
     player = new Tone.Player({
         loop: false,
@@ -119,6 +123,10 @@ export async function loadCurrentTrack(): Promise<void> {
     loaded = false;
     isPlaying.set(false);
     resetPlaybackPosition(0);
+    lufsHistory = [];
+    dbLevel.set(-60);
+    lufs.set(-60);
+    waveformData.set(null);
     
     await player.load(track.url);
     
@@ -263,31 +271,41 @@ function startLoop(): void {
         
         if (analyser && meter) {
             try {
-                const fftValues = analyser.getValue();
-                const meterValue = meter.getValue();
+                const waveformValues = analyser.getValue() as Float32Array;
+                const meterValue = meter.getValue() as number;
                 
-                const rmsValue = Math.max(0, Tone.dbToGain(meterValue as number));
+                const rmsValue = Math.max(0, Tone.dbToGain(meterValue));
                 rms.set(rmsValue);
+                dbLevel.set(meterValue);
+                waveformData.set(Float32Array.from(waveformValues));
+
+                lufsHistory.push(meterValue);
+                if (lufsHistory.length > 30) {
+                    lufsHistory.shift();
+                }
+
+                const averagedLufs = lufsHistory.reduce((sum, value) => sum + value, 0) / Math.max(1, lufsHistory.length);
+                lufs.set(averagedLufs);
                 
-                const bins = fftValues.length;
+                const bins = waveformValues.length;
                 const bassEnd = Math.floor(bins * 0.1);
                 const midEnd = Math.floor(bins * 0.5);
                 
                 let bassSum = 0, midSum = 0, trebleSum = 0;
                 
                 for (let i = 0; i < bassEnd; i++) {
-                    bassSum += (fftValues[i] as number + 100) / 100;
+                    bassSum += Math.abs(waveformValues[i]);
                 }
                 for (let i = bassEnd; i < midEnd; i++) {
-                    midSum += (fftValues[i] as number + 100) / 100;
+                    midSum += Math.abs(waveformValues[i]);
                 }
                 for (let i = midEnd; i < bins; i++) {
-                    trebleSum += (fftValues[i] as number + 100) / 100;
+                    trebleSum += Math.abs(waveformValues[i]);
                 }
                 
-                bass.set(Math.max(0, Math.min(1, bassSum / bassEnd)));
-                mid.set(Math.max(0, Math.min(1, midSum / (midEnd - bassEnd))));
-                treble.set(Math.max(0, Math.min(1, trebleSum / (bins - midEnd))));
+                bass.set(Math.max(0, Math.min(1, bassSum / Math.max(1, bassEnd) * 2.5)));
+                mid.set(Math.max(0, Math.min(1, midSum / Math.max(1, midEnd - bassEnd) * 2.5)));
+                treble.set(Math.max(0, Math.min(1, trebleSum / Math.max(1, bins - midEnd) * 2.5)));
             } catch (e) {}
         }
         
@@ -319,6 +337,8 @@ export function cleanup(): void {
         analyser = null;
     }
     loaded = false;
+    lufsHistory = [];
+    waveformData.set(null);
 }
 
 export async function playTrackAt(index: number): Promise<void> {

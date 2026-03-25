@@ -2,6 +2,7 @@
     import { T } from '@threlte/core';
     import { OrbitControls } from '@threlte/extras';
     import WireframeSphere from './WireframeSphere.svelte';
+    import { params } from '$lib/stores/params';
 </script>
 
 <T.PerspectiveCamera makeDefault position={[0, 0, 80]} fov={60}>
@@ -11,4 +12,6 @@
 <T.PointLight position={[10, 10, 10]} intensity={1} />
 <T.PointLight position={[-10, -10, -10]} intensity={0.5} />
 
-<WireframeSphere />
+{#if $params.displayMode === 'sphere'}
+    <WireframeSphere />
+{/if}
