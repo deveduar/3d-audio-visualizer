@@ -20,16 +20,29 @@
         
         const unsub = currentTime.subscribe(t => {
             const dur = get(duration);
-            if (dur > 0 && !isDragging) {
-                displayProgress = t / dur;
+            if (!isDragging) {
+                if (dur > 0) {
+                    displayProgress = t / dur;
+                } else {
+                    displayProgress = 0;
+                }
                 displayTime = t;
             }
         });
         
-        duration.subscribe(d => {
-            if (d > 0 && !isDragging && displayProgress === 0) {
-                displayProgress = displayTime / d;
+        const unsubDuration = duration.subscribe(d => {
+            if (d > 0 && !isDragging) {
+                if (displayTime > 0) {
+                    displayProgress = displayTime / d;
+                } else {
+                    displayProgress = 0;
+                }
             }
+        });
+        
+        currentIndex.subscribe(() => {
+            displayProgress = 0;
+            displayTime = 0;
         });
         
         loadStaticTracks().then(() => {
@@ -39,6 +52,7 @@
         
         return () => {
             unsub();
+            unsubDuration();
         };
     });
     

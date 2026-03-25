@@ -24,9 +24,15 @@ let loaded = false;
 
 let isTransitioning = false;
 let isSeeking = false;
-let seekOffset = 0;
 let pausePosition = 0;
-let lastSeekTime = 0;
+let playbackOffset = 0;
+let stopIntent: 'none' | 'pause' | 'seek' | 'track-change' = 'none';
+
+function resetPlaybackPosition(time = 0): void {
+    playbackOffset = time;
+    pausePosition = time;
+    currentTime.set(time);
+}
 
 export async function initAudio(): Promise<void> {
     const context = Tone.getContext();
@@ -51,23 +57,42 @@ export async function initAudio(): Promise<void> {
     player.chain(limiter, meter, analyser, Tone.Destination);
     
     player.onstop = () => {
-        if (!isTransitioning && !isSeeking) {
-            const repeatEnabled = get(repeat);
-            
-            if (!repeatEnabled) {
-                if (get(isPlaying) && get(autoPlay)) {
-                    setTimeout(() => {
-                        const $tracks = get(tracks);
-                        const $currentIndex = get(currentIndex);
-                        if ($tracks.length > 0) {
-                            isTransitioning = true;
-                            currentIndex.set(($currentIndex + 1) % $tracks.length);
-                            setTimeout(() => { isTransitioning = false; }, 200);
+        const intent = stopIntent;
+        stopIntent = 'none';
+
+        if (intent !== 'none' || isSeeking) {
+            return;
+        }
+
+        const repeatEnabled = get(repeat);
+        const autoPlayEnabled = get(autoPlay);
+        const isCurrentlyPlaying = get(isPlaying);
+
+        resetPlaybackPosition(0);
+
+        if (!repeatEnabled) {
+            if (isCurrentlyPlaying && autoPlayEnabled) {
+                const $tracks = get(tracks);
+                const $currentIndex = get(currentIndex);
+                if ($tracks.length > 0) {
+                    const nextIndex = ($currentIndex + 1) % $tracks.length;
+                    currentIndex.set(nextIndex);
+
+                    setTimeout(async () => {
+                        await loadCurrentTrack();
+                        if (player && loaded) {
+                            try {
+                                playbackOffset = 0;
+                                player.start(0, 0);
+                                isPlaying.set(true);
+                            } catch (e) {
+                                console.error('Autoplay error:', e);
+                            }
                         }
                     }, 100);
-                } else if (get(isPlaying) && !get(autoPlay)) {
-                    isPlaying.set(false);
                 }
+            } else if (isCurrentlyPlaying && !autoPlayEnabled) {
+                isPlaying.set(false);
             }
         }
     };
@@ -83,15 +108,17 @@ export async function loadCurrentTrack(): Promise<void> {
     if (!track || !player) return;
     
     try {
+        stopIntent = 'track-change';
         player.stop();
     } catch (e) {}
     
+    const transport = Tone.getTransport();
+    transport.cancel();
+    transport.seconds = 0;
+    
     loaded = false;
     isPlaying.set(false);
-    currentTime.set(0);
-    pausePosition = 0;
-    seekOffset = 0;
-    lastSeekTime = 0;
+    resetPlaybackPosition(0);
     
     await player.load(track.url);
     
@@ -131,14 +158,17 @@ export async function togglePlay(): Promise<void> {
     isTransitioning = true;
     
     if (player.state === 'started') {
-        pausePosition = transport.seconds;
-        player.stop();
+        pausePosition = get(currentTime);
+        playbackOffset = pausePosition;
+        stopIntent = 'pause';
         isPlaying.set(false);
+        player.stop();
     } else {
         try {
             const startPos = pausePosition > 0 ? pausePosition : 0;
             transport.cancel();
-            transport.seconds = startPos;
+            transport.seconds = 0;
+            playbackOffset = startPos;
             player.start(0, startPos);
             isPlaying.set(true);
         } catch (e) {
@@ -160,10 +190,13 @@ export async function seek(time: number): Promise<void> {
     
     isSeeking = true;
     isTransitioning = true;
-    lastSeekTime = clampedTime;
+    playbackOffset = clampedTime;
+    pausePosition = clampedTime;
+    currentTime.set(clampedTime);
     
     if (wasPlaying) {
         try {
+            stopIntent = 'seek';
             player.stop();
         } catch (e) {}
         
@@ -176,16 +209,13 @@ export async function seek(time: number): Promise<void> {
         try {
             player.start(0, clampedTime);
             isPlaying.set(true);
-            currentTime.set(clampedTime);
         } catch (e) {
             console.error('Seek start error:', e);
         }
     } else {
-        seekOffset = clampedTime;
         const transport = Tone.getTransport();
         transport.cancel();
         transport.seconds = 0;
-        currentTime.set(clampedTime);
     }
     
     setTimeout(() => {
@@ -216,17 +246,17 @@ function startLoop(): void {
             if (bufDur > 0) {
                 if (player.state === 'started') {
                     const transport = Tone.getTransport();
-                    let pos = transport.seconds + lastSeekTime;
+                    let pos = playbackOffset + transport.seconds;
                     if (pos > bufDur) pos = bufDur;
                     if (pos < 0) pos = 0;
                     currentTime.set(pos);
                     
                     if (pos >= bufDur - 0.1 && player.loop) {
-                        lastSeekTime = 0;
+                        playbackOffset = 0;
                         currentTime.set(0);
                     }
-                } else if (seekOffset > 0 && !isSeeking) {
-                    currentTime.set(seekOffset);
+                } else if (!isSeeking) {
+                    currentTime.set(pausePosition);
                 }
             }
         }
@@ -297,16 +327,24 @@ export async function playTrackAt(index: number): Promise<void> {
     
     isTransitioning = true;
     
+    resetPlaybackPosition(0);
+    
     if (player && player.state === 'started') {
         try {
+            stopIntent = 'track-change';
             player.stop();
         } catch (e) {}
     }
     
+    const transport = Tone.getTransport();
+    transport.cancel();
+    transport.seconds = 0;
+    
     currentIndex.set(index);
+    
     await loadCurrentTrack();
     
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 150));
     
     if (player && loaded) {
         try {
