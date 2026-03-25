@@ -1,17 +1,21 @@
 <script lang="ts">
-    import { waveformData, isPlaying } from '$lib/stores/audioEngine';
+    import { isPlaying, rms } from '$lib/stores/playlistStore';
     import { onMount } from 'svelte';
     
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D | null = null;
+    let animationId: number | null = null;
+    let bars: number[] = Array(64).fill(0);
     
     onMount(() => {
         ctx = canvas.getContext('2d');
         resize();
         window.addEventListener('resize', resize);
+        drawLoop();
         
         return () => {
             window.removeEventListener('resize', resize);
+            if (animationId) cancelAnimationFrame(animationId);
         };
     });
     
@@ -23,43 +27,31 @@
         }
     }
     
-    function draw() {
-        if (!ctx || !$waveformData) return;
+    function drawLoop() {
+        if (!ctx) return;
         
         const width = canvas.width;
         const height = canvas.height;
-        const data = $waveformData;
         
         ctx.clearRect(0, 0, width, height);
         
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
+        const barCount = bars.length;
+        const barWidth = width / barCount;
         
-        const sliceWidth = width / data.length;
-        let x = 0;
-        
-        for (let i = 0; i < data.length; i++) {
-            const v = data[i];
-            const y = (v + 1) / 2 * height;
+        for (let i = 0; i < barCount; i++) {
+            const target = $isPlaying ? Math.random() * $rms * 100 : 0;
+            bars[i] += (target - bars[i]) * 0.3;
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
+            const barHeight = bars[i] * height;
+            const x = i * barWidth;
+            const y = (height - barHeight) / 2;
             
-            x += sliceWidth;
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + bars[i] * 0.7})`;
+            ctx.fillRect(x, y, barWidth - 2, barHeight);
         }
         
-        ctx.stroke();
+        animationId = requestAnimationFrame(drawLoop);
     }
-    
-    $effect(() => {
-        if ($waveformData && ctx) {
-            draw();
-        }
-    });
 </script>
 
 <div class="waveform-container">

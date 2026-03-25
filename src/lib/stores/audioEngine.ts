@@ -1,170 +1,177 @@
-import { writable, get } from 'svelte/store';
 import * as Tone from 'tone';
+import { get } from 'svelte/store';
+import { 
+    tracks, 
+    currentIndex, 
+    isPlaying, 
+    currentTime, 
+    duration, 
+    volume,
+    rms,
+    bass,
+    mid,
+    treble,
+    currentTrack
+} from './playlistStore';
 
-export const isPlaying = writable(false);
-export const currentTime = writable(0);
-export const duration = writable(0);
-export const volume = writable(0.8);
-export const currentTrackName = writable('Still.mp3');
-
-export const rms = writable(0);
-export const bass = writable(0);
-export const mid = writable(0);
-export const treble = writable(0);
-export const waveformData = writable<Float32Array | null>(null);
-
-let audio: HTMLAudioElement | null = null;
-let audioContext: AudioContext | null = null;
-let analyser: AnalyserNode | null = null;
-let meter: AnalyserNode | null = null;
+let player: Tone.Player | null = null;
+let limiter: Tone.Limiter | null = null;
+let meter: Tone.Meter | null = null;
+let analyser: Tone.Analyser | null = null;
 let animationId: number | null = null;
-let startTime = 0;
-let pausedAt = 0;
+let loaded = false;
 
-export async function initAudio() {
-    audio = new Audio('/track.mp3');
-    audio.crossOrigin = 'anonymous';
+export async function initAudio(): Promise<void> {
+    if (Tone.context.state !== 'running') {
+        await Tone.start();
+    }
     
-    await new Promise<void>((resolve, reject) => {
-        audio!.oncanplaythrough = () => resolve();
-        audio!.onerror = () => reject();
+    if (Tone.Transport.state !== 'started') {
+        Tone.Transport.start();
+    }
+    
+    limiter = new Tone.Limiter(-1).toDestination();
+    meter = new Tone.Meter();
+    analyser = new Tone.Analyser('fft', 512);
+    
+    player = new Tone.Player({
+        loop: false,
+        volume: Tone.gainToDb(get(volume))
     });
     
-    duration.set(audio.duration);
-    
-    audioContext = new AudioContext();
-    const source = audioContext.createMediaElementSource(audio);
-    
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 512;
-    
-    meter = audioContext.createAnalyser();
-    meter.fftSize = 256;
-    
-    source.connect(analyser);
-    source.connect(meter);
-    meter.connect(audioContext.destination);
+    player.chain(limiter, meter, analyser, Tone.Destination);
     
     startLoop();
 }
 
-export async function loadTrack(file: File) {
-    if (audio) {
-        audio.pause();
-    }
+let trackStartTime = 0;
+let pausedPosition = 0;
+
+export async function loadCurrentTrack(): Promise<void> {
+    const $tracks = get(tracks);
+    const $currentIndex = get(currentIndex);
+    const track = $tracks[$currentIndex];
     
-    currentTrackName.set(file.name);
+    if (!track || !player) return;
+    
+    loaded = false;
     isPlaying.set(false);
     currentTime.set(0);
-    pausedAt = 0;
+    pausedPosition = 0;
+    trackStartTime = 0;
     
-    const url = URL.createObjectURL(file);
-    audio = new Audio(url);
+    await player.load(track.url);
     
-    await new Promise<void>((resolve, reject) => {
-        audio!.oncanplaythrough = () => resolve();
-        audio!.onerror = () => reject();
-    });
-    
-    duration.set(audio.duration);
-    
-    if (!audioContext) {
-        audioContext = new AudioContext();
-        const source = audioContext.createMediaElementSource(audio);
-        
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 512;
-        
-        meter = audioContext.createAnalyser();
-        meter.fftSize = 256;
-        
-        source.connect(analyser);
-        source.connect(meter);
-        meter.connect(audioContext.destination);
-    } else {
-        const source = audioContext.createMediaElementSource(audio);
-        source.connect(analyser);
-        source.connect(meter);
-    }
+    duration.set(player.buffer.duration);
+    loaded = true;
 }
 
-export function togglePlay() {
-    if (!audio) {
-        initAudio();
-        return;
+export async function togglePlay(): Promise<void> {
+    if (!player) {
+        await initAudio();
     }
     
-    if (audio.paused) {
-        if (audioContext?.state === 'suspended') {
-            audioContext.resume();
-        }
-        audio.currentTime = pausedAt;
-        audio.play();
-        startTime = Date.now();
-        isPlaying.set(true);
-    } else {
-        pausedAt = audio.currentTime;
-        audio.pause();
+    if (Tone.context.state !== 'running') {
+        await Tone.start();
+    }
+    
+    if (Tone.Transport.state !== 'started') {
+        Tone.Transport.start();
+    }
+    
+    const $tracks = get(tracks);
+    const $currentIndex = get(currentIndex);
+    
+    if ($tracks.length === 0) return;
+    
+    if (!loaded || !player?.buffer.loaded) {
+        await loadCurrentTrack();
+    }
+    
+    if (player && player.state === 'started') {
+        pausedPosition = Tone.Transport.seconds - trackStartTime;
+        player.stop();
         isPlaying.set(false);
+    } else if (player) {
+        player.start(undefined, pausedPosition);
+        trackStartTime = Tone.Transport.seconds - pausedPosition;
+        isPlaying.set(true);
     }
 }
 
-export function seek(percent: number) {
-    if (!audio) return;
-    const time = percent * get(duration);
-    audio.currentTime = time;
-    pausedAt = time;
+export async function seek(percent: number): Promise<void> {
+    const $duration = get(duration);
+    if (!$duration || $duration <= 0) return;
+    
+    const time = Math.max(0, Math.min(percent * $duration, $duration));
+    
+    pausedPosition = time;
     currentTime.set(time);
+    
+    if (player && loaded) {
+        try {
+            if (player.state === 'started') {
+                player.stop();
+            }
+            player.start(undefined, time);
+            trackStartTime = Tone.Transport.seconds - time;
+            isPlaying.set(true);
+        } catch (e) {
+            console.error('Seek error:', e);
+        }
+    }
 }
 
-export function setVolume(val: number) {
-    if (audio) {
-        audio.volume = val;
+export function setVolume(val: number): void {
+    if (player) {
+        player.volume.value = Tone.gainToDb(val);
     }
     volume.set(val);
 }
 
-function startLoop() {
-    function loop() {
-        if (audio) {
-            if (!audio.paused) {
-                currentTime.set(audio.currentTime);
-            }
-            
-            if (audio.ended) {
-                isPlaying.set(false);
-                pausedAt = 0;
-                currentTime.set(0);
+function startLoop(): void {
+    function loop(): void {
+        if (player) {
+            if (player.state === 'started') {
+                const position = Tone.Transport.seconds - trackStartTime;
+                currentTime.set(position);
+                
+                const bufDur = player.buffer.duration;
+                if (position >= bufDur && bufDur > 0) {
+                    isPlaying.set(false);
+                    currentTime.set(0);
+                    trackStartTime = 0;
+                }
             }
         }
         
         if (analyser && meter) {
             try {
-                const fftData = new Uint8Array(analyser.frequencyBinCount);
-                analyser.getByteFrequencyData(fftData);
+                const fftValues = analyser.getValue();
+                const meterValue = meter.getValue();
                 
-                const meterData = new Uint8Array(meter.frequencyBinCount);
-                meter.getByteFrequencyData(meterData);
+                const rmsValue = Math.max(0, Tone.dbToGain(meterValue as number));
+                rms.set(rmsValue);
                 
-                let rmsSum = 0;
-                for (let i = 0; i < meterData.length; i++) {
-                    rmsSum += meterData[i];
-                }
-                rms.set(rmsSum / meterData.length / 255);
-                
-                const bins = fftData.length;
+                const bins = fftValues.length;
                 const bassEnd = Math.floor(bins * 0.1);
                 const midEnd = Math.floor(bins * 0.5);
                 
                 let bassSum = 0, midSum = 0, trebleSum = 0;
                 
-                for (let i = 0; i < bassEnd; i++) bassSum += fftData[i];
-                for (let i = bassEnd; i < midEnd; i++) midSum += fftData[i];
-                for (let i = midEnd; i < bins; i++) trebleSum += fftData[i];
+                for (let i = 0; i < bassEnd; i++) {
+                    bassSum += (fftValues[i] as number + 100) / 100;
+                }
+                for (let i = bassEnd; i < midEnd; i++) {
+                    midSum += (fftValues[i] as number + 100) / 100;
+                }
+                for (let i = midEnd; i < bins; i++) {
+                    trebleSum += (fftValues[i] as number + 100) / 100;
+                }
                 
-                bass.set(bassSum / bassEnd / 255);
-                mid.set(midSum / (midEnd - bassEnd) / 255);
-                treble.set(trebleSum / (bins - midEnd) / 255);
+                bass.set(Math.max(0, Math.min(1, bassSum / bassEnd)));
+                mid.set(Math.max(0, Math.min(1, midSum / (midEnd - bassEnd))));
+                treble.set(Math.max(0, Math.min(1, trebleSum / (bins - midEnd))));
             } catch (e) {}
         }
         
@@ -174,19 +181,38 @@ function startLoop() {
     loop();
 }
 
-export function cleanup() {
+export function cleanup(): void {
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
-    if (audio) {
-        audio.pause();
-        audio = null;
+    if (player) {
+        player.stop();
+        player.dispose();
+        player = null;
     }
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
+    if (limiter) {
+        limiter.dispose();
+        limiter = null;
     }
-    analyser = null;
-    meter = null;
+    if (meter) {
+        meter.dispose();
+        meter = null;
+    }
+    if (analyser) {
+        analyser.dispose();
+        analyser = null;
+    }
+    loaded = false;
 }
+
+currentIndex.subscribe(async () => {
+    const wasPlaying = get(isPlaying);
+    if (player && get(tracks).length > 0) {
+        await loadCurrentTrack();
+        if (wasPlaying && player) {
+            player.start();
+            trackStartTime = Tone.Transport.seconds;
+        }
+    }
+});

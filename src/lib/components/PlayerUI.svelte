@@ -1,35 +1,47 @@
 <script lang="ts">
-    import { isPlaying, currentTime, duration, currentTrackName, togglePlay, loadTrack, seek, setVolume, initAudio } from '$lib/stores/audioEngine';
-    import Waveform from './Waveform.svelte';
+    import { isPlaying, currentTime, duration, volume, currentTrack, playNext, playPrev, loadStaticTracks, tracks } from '$lib/stores/playlistStore';
+    import { togglePlay, seek, setVolume, initAudio, loadCurrentTrack } from '$lib/stores/audioEngine';
     import { onMount } from 'svelte';
     
     let volumeValue = $state(0.8);
+    let initialized = $state(false);
+    let loading = $state(true);
     
-    onMount(() => {
-        initAudio();
+    onMount(async () => {
+        volume.subscribe(v => volumeValue = v);
+        
+        await loadStaticTracks();
+        initialized = true;
+        loading = false;
     });
     
-    function handleFile(e: Event) {
-        const target = e.target as HTMLInputElement;
-        if (target.files && target.files[0]) {
-            loadTrack(target.files[0]);
-        }
+    async function handlePlay() {
+        if (!initialized) return;
+        await togglePlay();
     }
     
-    function handleProgressClick(e: MouseEvent) {
+    async function handlePrev() {
+        await playPrev();
+    }
+    
+    async function handleNext() {
+        await playNext();
+    }
+    
+    async function handleProgressClick(e: MouseEvent) {
         if (!$duration) return;
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = e.clientX - rect.left;
         const percent = x / rect.width;
-        seek(Math.max(0, Math.min(1, percent)));
+        await seek(Math.max(0, Math.min(1, percent)));
     }
     
-    function handleProgressKey(e: KeyboardEvent) {
+    async function handleProgressKey(e: KeyboardEvent) {
         if (!$duration) return;
         if (e.key === 'ArrowRight') {
-            seek(($currentTime / $duration) + 0.05);
+            await seek(($currentTime / $duration) + 0.05);
         } else if (e.key === 'ArrowLeft') {
-            seek(($currentTime / $duration) - 0.05);
+            await seek(($currentTime / $duration) - 0.05);
         }
     }
     
@@ -54,37 +66,27 @@
 </script>
 
 <div class="ui">
-    <div class="top">
-        <label for="audio" class="upload-btn">SUBIR TRACK</label>
-        <input type="file" id="audio" accept=".mp3,.wav,.ogg" onchange={handleFile} />
-        <span class="track-name">{$currentTrackName}</span>
+    <div class="progress-bar" onclick={handleProgressClick} onkeydown={handleProgressKey} role="slider" tabindex="0" aria-label="Progress" aria-valuenow={$currentTime} aria-valuemin={0} aria-valuemax={$duration}>
+        <div class="progress-fill" style="width: {getProgress()}%"></div>
     </div>
     
-    <Waveform />
-    
-    <div class="controls">
-        <button class="play-btn" onclick={togglePlay}>
-            {$isPlaying ? '⏸' : '▶'}
-        </button>
-    </div>
-    
-    <div class="bottom">
-        <div class="time-info">
-            <span>{formatTime($currentTime)}</span>
-            <span>{formatTime($duration)}</span>
+    <div class="main">
+        <div class="track-info">
+            <span class="track-name">{loading ? 'Loading...' : $currentTrack?.name || 'No track loaded'}</span>
+            <div class="time-display">
+                <span>{formatTime($currentTime)}</span>
+                <span class="separator">/</span>
+                <span>{formatTime($duration)}</span>
+            </div>
         </div>
         
-        <button 
-            class="progress-wrapper" 
-            onclick={handleProgressClick}
-            onkeydown={handleProgressKey}
-            type="button"
-            aria-label="Progress bar"
-        >
-            <div class="progress-bg">
-                <div class="progress-fill" style="width: {getProgress()}%"></div>
-            </div>
-        </button>
+        <div class="controls">
+            <button class="nav-btn" onclick={handlePrev}>⏮</button>
+            <button class="play-btn" onclick={handlePlay}>
+                {$isPlaying ? '⏸' : '▶'}
+            </button>
+            <button class="nav-btn" onclick={handleNext}>⏭</button>
+        </div>
         
         <div class="volume-control">
             <span>VOL</span>
@@ -106,48 +108,87 @@
         bottom: 0;
         left: 0;
         right: 0;
-        padding: 20px;
+        padding: 0;
         background: linear-gradient(transparent, rgba(0,0,0,0.95));
         color: white;
         font-family: 'Courier New', monospace;
         z-index: 100;
     }
     
-    .top {
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+        cursor: pointer;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: white;
+        transition: width 0.1s linear;
+    }
+    
+    .main {
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 15px;
+        justify-content: space-between;
+        padding: 15px 20px;
+        gap: 20px;
     }
     
-    .upload-btn {
-        background: white;
-        color: black;
-        padding: 8px 16px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: bold;
-        border: none;
+    .track-info {
+        flex: 1;
+        min-width: 0;
     }
     
-    input[type="file"] { display: none; }
+    .track-name { 
+        font-size: 13px; 
+        opacity: 0.9; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
     
-    .track-name { font-size: 14px; opacity: 0.8; }
+    .time-display {
+        font-size: 11px;
+        opacity: 0.6;
+        margin-top: 4px;
+    }
+    
+    .separator {
+        margin: 0 4px;
+    }
     
     .controls {
         display: flex;
         justify-content: center;
-        margin: 15px 0;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .nav-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        opacity: 0.6;
+        padding: 8px;
+    }
+    
+    .nav-btn:hover {
+        opacity: 1;
     }
     
     .play-btn {
         background: white;
         color: black;
         border: none;
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        font-size: 20px;
+        font-size: 16px;
         cursor: pointer;
     }
     
@@ -155,58 +196,29 @@
         transform: scale(1.1);
     }
     
-    .bottom { display: flex; flex-direction: column; gap: 8px; }
-    
-    .time-info {
-        display: flex;
-        justify-content: space-between;
-        font-size: 12px;
-        opacity: 0.7;
-    }
-    
-    .progress-wrapper {
-        width: 100%;
-        cursor: pointer;
-        padding: 8px 0;
-        background: none;
-        border: none;
-    }
-    
-    .progress-bg {
-        width: 100%;
-        height: 4px;
-        background: rgba(255,255,255,0.2);
-        position: relative;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: white;
-        position: absolute;
-        left: 0;
-        top: 0;
-    }
-    
     .volume-control {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-top: 10px;
+        gap: 8px;
     }
     
-    .volume-control span { font-size: 12px; opacity: 0.7; }
+    .volume-control span { 
+        font-size: 10px; 
+        opacity: 0.6; 
+        white-space: nowrap;
+    }
     
     .volume-control input[type="range"] {
-        width: 100px;
+        width: 80px;
         height: 4px;
-        -webkit-appearance: none;
+        appearance: none;
         background: rgba(255,255,255,0.2);
     }
     
     .volume-control input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 12px;
-        height: 12px;
+        appearance: none;
+        width: 10px;
+        height: 10px;
         background: white;
         border-radius: 50%;
     }

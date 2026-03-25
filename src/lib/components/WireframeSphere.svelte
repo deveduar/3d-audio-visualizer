@@ -2,12 +2,21 @@
     import { T, useTask } from '@threlte/core';
     import { ShaderMaterial, DoubleSide } from 'three';
     import { get } from 'svelte/store';
-    import { rms, bass, treble } from '$lib/stores/audioEngine';
+    import { rms, bass, treble, currentIndex } from '$lib/stores/playlistStore';
     import { params } from '$lib/stores/params';
     
     let time = $state(0);
     let scale = $state(0.5);
     let rotation = $state(0);
+    let animScale = $state(0);
+    let lastIndex = $state(-1);
+    
+    $effect(() => {
+        if ($currentIndex !== lastIndex && $currentIndex >= 0) {
+            lastIndex = $currentIndex;
+            animScale = 0;
+        }
+    });
     
     const vertexShader = `
         uniform float uTime;
@@ -137,6 +146,8 @@
         const targetScale = 0.5 + (currentRms * 1.5);
         scale = scale + (targetScale - scale) * 0.1;
         
+        animScale += (1 - animScale) * 0.05;
+        
         material.uniforms.uTime.value = time;
         material.uniforms.uRMS.value = currentRms;
         material.uniforms.uBass.value = get(bass);
@@ -147,7 +158,7 @@
     });
 </script>
 
-<T.Mesh rotation.y={rotation} scale={scale}>
+<T.Mesh rotation.y={rotation} scale={scale * animScale}>
     <T.IcosahedronGeometry args={[20, 4]} />
     <T is={material} />
 </T.Mesh>
