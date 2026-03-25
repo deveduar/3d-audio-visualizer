@@ -11,7 +11,8 @@ import {
     bass,
     mid,
     treble,
-    currentTrack
+    currentTrack,
+    playNext
 } from './playlistStore';
 
 let player: Tone.Player | null = null;
@@ -47,23 +48,34 @@ export async function initAudio(): Promise<void> {
 let trackStartTime = 0;
 let pausedPosition = 0;
 
-export async function loadCurrentTrack(): Promise<void> {
+export async function loadCurrentTrack(keepPosition = false): Promise<void> {
     const $tracks = get(tracks);
     const $currentIndex = get(currentIndex);
     const track = $tracks[$currentIndex];
     
     if (!track || !player) return;
     
+    const wasPlaying = player.state === 'started';
+    const previousPosition = wasPlaying ? Tone.Transport.seconds - trackStartTime : pausedPosition;
+    
     loaded = false;
     isPlaying.set(false);
     currentTime.set(0);
-    pausedPosition = 0;
-    trackStartTime = 0;
+    
+    if (!keepPosition) {
+        pausedPosition = 0;
+        trackStartTime = 0;
+    }
     
     await player.load(track.url);
     
     duration.set(player.buffer.duration);
     loaded = true;
+    
+    if (keepPosition && previousPosition > 0 && previousPosition < player.buffer.duration) {
+        pausedPosition = previousPosition;
+        currentTime.set(previousPosition);
+    }
 }
 
 export async function togglePlay(): Promise<void> {
@@ -141,6 +153,7 @@ function startLoop(): void {
                     isPlaying.set(false);
                     currentTime.set(0);
                     trackStartTime = 0;
+                    playNext();
                 }
             }
         }
@@ -206,13 +219,21 @@ export function cleanup(): void {
     loaded = false;
 }
 
+let isChangingTrack = false;
+
 currentIndex.subscribe(async () => {
+    if (isChangingTrack) return;
+    isChangingTrack = true;
+    
     const wasPlaying = get(isPlaying);
     if (player && get(tracks).length > 0) {
-        await loadCurrentTrack();
-        if (wasPlaying && player) {
+        await loadCurrentTrack(true);
+        if (wasPlaying && player && loaded) {
             player.start();
             trackStartTime = Tone.Transport.seconds;
+            isPlaying.set(true);
         }
     }
+    
+    isChangingTrack = false;
 });
