@@ -5,6 +5,7 @@
         params,
         type DisplayMode,
         type GeometryType,
+        type RenderMode,
         type WaveformStyle,
         defaultVisualParams,
         getPresetNames,
@@ -36,6 +37,7 @@
     const localParams = $state({
         displayMode: 'sphere' as DisplayMode,
         geometryType: 'icosahedron' as GeometryType,
+        renderMode: 'wireframe' as RenderMode,
         waveformStyle: 'line' as WaveformStyle,
         noiseFreq: 0.1,
         noiseAmp: 15,
@@ -45,7 +47,11 @@
         bloomStrength: 0.5,
         bloomRadius: 0.5,
         bloomThreshold: 0.2,
-        showMeters: true
+        showMeters: true,
+        showImpactOverlay: true,
+        impactSensitivity: 0.08,
+        impactFlash: 0.9,
+        impactFrame: 1
     });
 
     const presetState = $state({
@@ -103,6 +109,16 @@
                     }
                 })
                 .on('change', syncToStore);
+
+            viewFolder
+                .addBinding(localParams, 'renderMode', {
+                    label: 'render',
+                    options: {
+                        Wire: 'wireframe',
+                        Solid: 'solid'
+                    }
+                })
+                .on('change', syncToStore);
         } else {
             viewFolder
                 .addBinding(localParams, 'waveformStyle', {
@@ -134,6 +150,22 @@
             .addBinding(localParams, 'showMeters', {
                 label: 'meters'
             })
+            .on('change', syncToStore);
+
+        const eventsFolder = editorPane.addFolder({ title: 'EVENTS' });
+        eventsFolder
+            .addBinding(localParams, 'showImpactOverlay', {
+                label: 'overlay'
+            })
+            .on('change', syncToStore);
+        eventsFolder
+            .addBinding(localParams, 'impactSensitivity', { label: 'threshold', min: 0.02, max: 0.3, step: 0.01 })
+            .on('change', syncToStore);
+        eventsFolder
+            .addBinding(localParams, 'impactFlash', { label: 'flash', min: 0.2, max: 1.5, step: 0.05 })
+            .on('change', syncToStore);
+        eventsFolder
+            .addBinding(localParams, 'impactFrame', { label: 'frame', min: 0.2, max: 1.5, step: 0.05 })
             .on('change', syncToStore);
 
         const postFolder = editorPane.addFolder({ title: 'POST' });
@@ -218,6 +250,7 @@
         const unsubParams = params.subscribe((p) => {
             localParams.displayMode = p.displayMode;
             localParams.geometryType = p.geometryType;
+            localParams.renderMode = p.renderMode;
             localParams.waveformStyle = p.waveformStyle;
             localParams.noiseFreq = p.noiseFreq;
             localParams.noiseAmp = p.noiseAmp;
@@ -228,6 +261,10 @@
             localParams.bloomRadius = p.bloomRadius;
             localParams.bloomThreshold = p.bloomThreshold;
             localParams.showMeters = p.showMeters;
+            localParams.showImpactOverlay = p.showImpactOverlay;
+            localParams.impactSensitivity = p.impactSensitivity;
+            localParams.impactFlash = p.impactFlash;
+            localParams.impactFrame = p.impactFrame;
             refreshPane();
         });
 

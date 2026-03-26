@@ -4,10 +4,12 @@ import { get, writable } from 'svelte/store';
 export type DisplayMode = 'sphere' | 'waveform';
 export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
+export type RenderMode = 'wireframe' | 'solid';
 
 export interface VisualParams {
     displayMode: DisplayMode;
     geometryType: GeometryType;
+    renderMode: RenderMode;
     waveformStyle: WaveformStyle;
     noiseSpeed: number;
     noiseAmp: number;
@@ -18,6 +20,10 @@ export interface VisualParams {
     bloomThreshold: number;
     baseRadius: number;
     showMeters: boolean;
+    showImpactOverlay: boolean;
+    impactSensitivity: number;
+    impactFlash: number;
+    impactFrame: number;
 }
 
 export type VisualPresetMap = Record<string, VisualParams>;
@@ -25,6 +31,7 @@ export type VisualPresetMap = Record<string, VisualParams>;
 export const defaultVisualParams: VisualParams = {
     displayMode: 'sphere',
     geometryType: 'icosahedron',
+    renderMode: 'wireframe',
     waveformStyle: 'line',
     noiseSpeed: 0.6,
     noiseAmp: 15,
@@ -34,7 +41,11 @@ export const defaultVisualParams: VisualParams = {
     bloomRadius: 0.5,
     bloomThreshold: 0.2,
     baseRadius: 20,
-    showMeters: true
+    showMeters: true,
+    showImpactOverlay: true,
+    impactSensitivity: 0.08,
+    impactFlash: 0.9,
+    impactFrame: 1
 };
 
 const DEFAULT_PRESETS: VisualPresetMap = {
@@ -69,10 +80,15 @@ function isWaveformStyle(value: unknown): value is WaveformStyle {
     return value === 'line' || value === 'bars' || value === 'mirror';
 }
 
+function isRenderMode(value: unknown): value is RenderMode {
+    return value === 'wireframe' || value === 'solid';
+}
+
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
         geometryType: isGeometryType(value?.geometryType) ? value.geometryType : defaultVisualParams.geometryType,
+        renderMode: isRenderMode(value?.renderMode) ? value.renderMode : defaultVisualParams.renderMode,
         waveformStyle: isWaveformStyle(value?.waveformStyle) ? value.waveformStyle : defaultVisualParams.waveformStyle,
         noiseSpeed: typeof value?.noiseSpeed === 'number' ? value.noiseSpeed : defaultVisualParams.noiseSpeed,
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
@@ -82,7 +98,11 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         bloomRadius: typeof value?.bloomRadius === 'number' ? value.bloomRadius : defaultVisualParams.bloomRadius,
         bloomThreshold: typeof value?.bloomThreshold === 'number' ? value.bloomThreshold : defaultVisualParams.bloomThreshold,
         baseRadius: typeof value?.baseRadius === 'number' ? value.baseRadius : defaultVisualParams.baseRadius,
-        showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters
+        showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters,
+        showImpactOverlay: typeof value?.showImpactOverlay === 'boolean' ? value.showImpactOverlay : defaultVisualParams.showImpactOverlay,
+        impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,
+        impactFlash: typeof value?.impactFlash === 'number' ? value.impactFlash : defaultVisualParams.impactFlash,
+        impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame
     };
 }
 

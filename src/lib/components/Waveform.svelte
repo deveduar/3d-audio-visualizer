@@ -40,6 +40,7 @@
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctx.fillRect(0, 0, width, height);
+        ctx.save();
 
         if (points.length > 0) {
             const style = $params.waveformStyle;
@@ -106,6 +107,8 @@
             ctx.lineWidth = 1;
             ctx.stroke();
         }
+
+        ctx.restore();
 
         animationId = requestAnimationFrame(drawLoop);
     }

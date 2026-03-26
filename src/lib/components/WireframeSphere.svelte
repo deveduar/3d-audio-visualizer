@@ -150,48 +150,53 @@
     useTask((delta) => {
         const p = get(params);
         time += delta * p.noiseSpeed;
-        rotation += delta * 0.2;
+        const currentBass = get(bass);
+        const currentTreble = get(treble);
+        rotation += delta * (0.08 + currentBass * 0.55 + currentTreble * 0.18);
 
-        const currentRms = Math.max(0.1, get(rms));
+        const currentRms = Math.max(0.01, get(rms));
         const currentTransient = get(transient);
-        const targetScale = 0.55 + currentRms * 1.5 + currentTransient * 0.6;
-        scale = scale + (targetScale - scale) * 0.1;
-        animScale += (1 - animScale) * 0.05;
+        const targetScale = 0.48 + currentRms * 2.2 + currentBass * 0.45 + currentTransient * 0.85;
+        scale = scale + (targetScale - scale) * 0.16;
+        animScale += (1 - animScale) * 0.08;
 
         material.uniforms.uTime.value = time;
         material.uniforms.uRMS.value = currentRms;
-        material.uniforms.uBass.value = get(bass);
+        material.uniforms.uBass.value = currentBass;
         material.uniforms.uTransient.value = currentTransient;
-        material.uniforms.uTreble.value = get(treble);
+        material.uniforms.uTreble.value = currentTreble;
         material.uniforms.uNoiseFreq.value = p.noiseFreq;
         material.uniforms.uNoiseAmp.value = p.noiseAmp;
         material.uniforms.uOpacity.value = p.wireframeOpacity;
         material.uniforms.uBloomStrength.value = p.bloomStrength;
         material.uniforms.uBloomRadius.value = p.bloomRadius;
         material.uniforms.uBloomThreshold.value = p.bloomThreshold;
+        material.wireframe = p.renderMode === 'wireframe';
     });
 </script>
 
-<T.Group rotation.y={rotation} scale={scale * animScale}>
-    {#if $params.geometryType === 'sphere'}
-        <T.Mesh>
-            <T.SphereGeometry args={[$params.baseRadius, 80, 80]} />
-            <T is={material} />
-        </T.Mesh>
-    {:else if $params.geometryType === 'torus'}
-        <T.Mesh>
-            <T.TorusKnotGeometry args={[$params.baseRadius * 0.55, $params.baseRadius * 0.18, 220, 32]} />
-            <T is={material} />
-        </T.Mesh>
-    {:else if $params.geometryType === 'cube'}
-        <T.Mesh>
-            <T.BoxGeometry args={[$params.baseRadius * 1.5, $params.baseRadius * 1.5, $params.baseRadius * 1.5, 12, 12, 12]} />
-            <T is={material} />
-        </T.Mesh>
-    {:else}
-        <T.Mesh>
-            <T.IcosahedronGeometry args={[$params.baseRadius, 4]} />
-            <T is={material} />
-        </T.Mesh>
-    {/if}
+<T.Group rotation.y={rotation} rotation.x={rotation * 0.32} scale={scale * animScale}>
+    {#key `${$params.geometryType}-${$params.renderMode}-${$params.baseRadius}`}
+        {#if $params.geometryType === 'sphere'}
+            <T.Mesh>
+                <T.SphereGeometry args={[$params.baseRadius, 80, 80]} />
+                <T is={material} />
+            </T.Mesh>
+        {:else if $params.geometryType === 'torus'}
+            <T.Mesh>
+                <T.TorusKnotGeometry args={[$params.baseRadius * 0.55, $params.baseRadius * 0.18, 220, 32]} />
+                <T is={material} />
+            </T.Mesh>
+        {:else if $params.geometryType === 'cube'}
+            <T.Mesh>
+                <T.BoxGeometry args={[$params.baseRadius * 1.5, $params.baseRadius * 1.5, $params.baseRadius * 1.5, 12, 12, 12]} />
+                <T is={material} />
+            </T.Mesh>
+        {:else}
+            <T.Mesh>
+                <T.IcosahedronGeometry args={[$params.baseRadius, 4]} />
+                <T is={material} />
+            </T.Mesh>
+        {/if}
+    {/key}
 </T.Group>

@@ -48,10 +48,10 @@ let smoothedDb = -60;
 let transientEnergy = 0;
 let transientCooldown = 0;
 
-const ATTACK_RATE = 0.22;
-const RELEASE_RATE = 0.08;
-const TRANSIENT_THRESHOLD = 0.16;
-const TRANSIENT_COOLDOWN_FRAMES = 8;
+const ATTACK_RATE = 0.34;
+const RELEASE_RATE = 0.12;
+const TRANSIENT_THRESHOLD = 0.08;
+const TRANSIENT_COOLDOWN_FRAMES = 6;
 
 function resetPlaybackPosition(time = 0): void {
     playbackOffset = time;
@@ -75,7 +75,7 @@ function smoothTowards(current: number, target: number, attack = ATTACK_RATE, re
     return current + (target - current) * factor;
 }
 
-function meterToUnit(value: number, gain = 1.2): number {
+function meterToUnit(value: number, gain = 1.6): number {
     return Math.max(0, Math.min(1, Tone.dbToGain(value) * gain));
 }
 

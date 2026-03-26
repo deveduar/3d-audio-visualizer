@@ -5,6 +5,7 @@
     import Sidebar from './Sidebar.svelte';
     import LiveEditor from './LiveEditor.svelte';
     import Waveform from './Waveform.svelte';
+    import ImpactOverlay from './ImpactOverlay.svelte';
     import { onDestroy } from 'svelte';
     import { cleanup as cleanupAudio } from '$lib/stores/audioEngine';
     import { cleanup as cleanupPlaylist } from '$lib/stores/playlistStore';
@@ -20,6 +21,7 @@
     <Canvas>
         <Scene />
     </Canvas>
+    <ImpactOverlay />
     {#if $params.displayMode === 'waveform'}
         <Waveform />
     {/if}
