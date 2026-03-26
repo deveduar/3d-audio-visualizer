@@ -5,6 +5,7 @@
     import Sidebar from './Sidebar.svelte';
     import LiveEditor from './LiveEditor.svelte';
     import Waveform from './Waveform.svelte';
+    import NebulaField from './NebulaField.svelte';
     import ImpactOverlay from './ImpactOverlay.svelte';
     import { onDestroy } from 'svelte';
     import { cleanup as cleanupAudio } from '$lib/stores/audioEngine';
@@ -65,12 +66,16 @@
 </script>
 
 <div class="visualizer" style={themeVars}>
-    <Canvas>
-        <Scene />
-    </Canvas>
+    {#if $params.displayMode === 'sphere'}
+        <Canvas>
+            <Scene />
+        </Canvas>
+    {/if}
     <ImpactOverlay />
     {#if $params.displayMode === 'waveform'}
         <Waveform />
+    {:else if $params.displayMode === 'nebula'}
+        <NebulaField />
     {/if}
     <Sidebar />
     <LiveEditor />

@@ -45,10 +45,10 @@
         renderMode: 'wireframe' as RenderMode,
         waveformStyle: 'line' as WaveformStyle,
         cameraMode: 'orbit-reactive' as CameraMode,
-        cameraDistance: 80,
+        cameraDistance: 120,
         cameraReactiveAmount: 0.7,
         cameraDamping: 0.1,
-        cameraEnableZoom: false,
+        cameraEnableZoom: true,
         cameraEnablePan: false,
         themeMode: 'dark' as ThemeMode,
         themePreset: 'mono' as ThemePreset,
@@ -58,6 +58,12 @@
         noiseFreq: 0.1,
         noiseAmp: 15,
         noiseSpeed: 0.6,
+        nebulaVariant: 'cloud',
+        nebulaDensity: 0.62,
+        nebulaFlow: 0.55,
+        nebulaDrift: 0.7,
+        nebulaPulse: 0.65,
+        nebulaSpread: 0.58,
         baseRadius: 20,
         wireframeOpacity: 1.0,
         postEnabled: true,
@@ -66,8 +72,8 @@
         bloomThreshold: 0.2,
         showMeters: true,
         showBands: true,
-        showImpactOverlay: true,
-        showOverlayLines: true,
+        showImpactOverlay: false,
+        showOverlayLines: false,
         impactSensitivity: 0.08,
         impactFlash: 0.9,
         impactFrame: 1
@@ -119,7 +125,8 @@
                 label: 'mode',
                 options: {
                     Geometry: 'sphere',
-                    Waveform: 'waveform'
+                    Waveform: 'waveform',
+                    Nebula: 'nebula'
                 }
             })
             .on('change', () => {
@@ -134,7 +141,10 @@
                         Icosa: 'icosahedron',
                         Sphere: 'sphere',
                         Torus: 'torus',
-                        Cube: 'cube'
+                        Cube: 'cube',
+                        Dodeca: 'dodecahedron',
+                        Cone: 'cone',
+                        Cylinder: 'cylinder'
                     }
                 })
                 .on('change', syncToStore);
@@ -148,7 +158,7 @@
                     }
                 })
                 .on('change', syncToStore);
-        } else {
+        } else if (localParams.displayMode === 'waveform') {
             viewFolder
                 .addBinding(localParams, 'waveformStyle', {
                     label: 'style',
@@ -205,47 +215,83 @@
             })
             .on('change', syncToStore);
 
-        const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
-        geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
-        geomFolder.addBinding(localParams, 'noiseAmp', { min: 0, max: 50, step: 1 }).on('change', syncToStore);
-        geomFolder.addBinding(localParams, 'noiseSpeed', { min: 0.1, max: 2, step: 0.1 }).on('change', syncToStore);
+        if (localParams.displayMode === 'nebula') {
+            const nebulaFolder = editorPane.addFolder({ title: 'NEBULA' });
+            nebulaFolder
+                .addBinding(localParams, 'nebulaVariant', {
+                    label: 'mode',
+                    options: {
+                        Cloud: 'cloud',
+                        Vortex: 'vortex',
+                        Ribbons: 'ribbons'
+                    }
+                })
+                .on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'nebulaDensity', { label: 'density', min: 0.1, max: 1.4, step: 0.01 })
+                .on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'nebulaFlow', { label: 'flow', min: 0, max: 1.4, step: 0.01 })
+                .on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'nebulaDrift', { label: 'drift', min: 0, max: 1.6, step: 0.01 })
+                .on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'nebulaPulse', { label: 'pulse', min: 0, max: 1.5, step: 0.01 })
+                .on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'nebulaSpread', { label: 'spread', min: 0, max: 1.4, step: 0.01 })
+                .on('change', syncToStore);
+            nebulaFolder.addBinding(localParams, 'noiseSpeed', { label: 'speed', min: 0.05, max: 1.4, step: 0.05 }).on('change', syncToStore);
+            nebulaFolder.addBinding(localParams, 'noiseAmp', { label: 'gain', min: 0, max: 40, step: 1 }).on('change', syncToStore);
+            nebulaFolder
+                .addBinding(localParams, 'wireframeOpacity', { label: 'opacity', min: 0.1, max: 1, step: 0.05 })
+                .on('change', syncToStore);
+        } else {
+            const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
+            geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
+            geomFolder.addBinding(localParams, 'noiseAmp', { min: 0, max: 50, step: 1 }).on('change', syncToStore);
+            geomFolder.addBinding(localParams, 'noiseSpeed', { min: 0.1, max: 2, step: 0.1 }).on('change', syncToStore);
 
-        if (localParams.displayMode === 'sphere') {
-            geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
+            if (localParams.displayMode === 'sphere') {
+                geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
+            }
+
+            geomFolder
+                .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
+                .on('change', syncToStore);
         }
 
-        geomFolder
-            .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
-            .on('change', syncToStore);
-
-        const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
-        cameraFolder
-            .addBinding(localParams, 'cameraMode', {
-                label: 'mode',
-                options: {
-                    Locked: 'locked',
-                    Orbit: 'orbit',
-                    Reactive: 'reactive',
-                    'Orbit+React': 'orbit-reactive'
-                }
-            })
-            .on('change', syncToStore);
-        cameraFolder
-            .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 400, step: 1 })
-            .on('change', syncToStore);
-        cameraFolder
-            .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 6, step: 0.1 })
-            .on('change', syncToStore);
-        cameraFolder
-            .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.9, step: 0.01 })
-            .on('change', syncToStore);
-        cameraFolder
-            .addBinding(localParams, 'cameraEnableZoom', { label: 'zoom' })
-            .on('change', syncToStore);
-        cameraFolder
-            .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
-            .on('change', syncToStore);
-        cameraFolder.addButton({ title: 'RESET CAMERA' }).on('click', handleResetCamera);
+        if (localParams.displayMode !== 'nebula') {
+            const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
+            cameraFolder
+                .addBinding(localParams, 'cameraMode', {
+                    label: 'mode',
+                    options: {
+                        Locked: 'locked',
+                        Orbit: 'orbit',
+                        Reactive: 'reactive',
+                        'Orbit+React': 'orbit-reactive'
+                    }
+                })
+                .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 400, step: 1 })
+                .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 6, step: 0.1 })
+                .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.9, step: 0.01 })
+                .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'cameraEnableZoom', { label: 'zoom' })
+                .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
+                .on('change', syncToStore);
+            cameraFolder.addButton({ title: 'RESET CAMERA' }).on('click', handleResetCamera);
+        }
 
         const audioFolder = editorPane.addFolder({ title: 'AUDIO' });
         audioFolder
@@ -392,6 +438,12 @@
             localParams.noiseFreq = p.noiseFreq;
             localParams.noiseAmp = p.noiseAmp;
             localParams.noiseSpeed = p.noiseSpeed;
+            localParams.nebulaVariant = p.nebulaVariant;
+            localParams.nebulaDensity = p.nebulaDensity;
+            localParams.nebulaFlow = p.nebulaFlow;
+            localParams.nebulaDrift = p.nebulaDrift;
+            localParams.nebulaPulse = p.nebulaPulse;
+            localParams.nebulaSpread = p.nebulaSpread;
             localParams.baseRadius = p.baseRadius;
             localParams.wireframeOpacity = p.wireframeOpacity;
             localParams.postEnabled = p.postEnabled;
@@ -654,5 +706,27 @@
 
     .transient-fill {
         background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent-soft) 35%, transparent) 0%, var(--ui-accent) 100%);
+    }
+
+    @media (max-width: 1280px) {
+        .meters-panel,
+        .band-panel {
+            position: absolute;
+            right: 20px;
+            left: auto;
+            width: 300px;
+        }
+
+        .meters-panel,
+        .meters-panel.sidebar-open {
+            top: calc(100% + 12px);
+            left: auto;
+        }
+
+        .band-panel,
+        .band-panel.sidebar-open {
+            top: calc(100% + 112px);
+            left: auto;
+        }
     }
 </style>

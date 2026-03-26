@@ -1,13 +1,14 @@
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 
-export type DisplayMode = 'sphere' | 'waveform';
-export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube';
+export type DisplayMode = 'sphere' | 'waveform' | 'nebula';
+export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube' | 'dodecahedron' | 'cone' | 'cylinder';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
 export type RenderMode = 'wireframe' | 'solid';
 export type CameraMode = 'locked' | 'orbit' | 'reactive' | 'orbit-reactive';
 export type ThemeMode = 'dark' | 'light';
 export type ThemePreset = 'mono' | 'sunset' | 'ice' | 'acid';
+export type NebulaVariant = 'cloud' | 'vortex' | 'ribbons';
 
 export interface VisualParams {
     displayMode: DisplayMode;
@@ -28,6 +29,12 @@ export interface VisualParams {
     noiseSpeed: number;
     noiseAmp: number;
     noiseFreq: number;
+    nebulaVariant: NebulaVariant;
+    nebulaDensity: number;
+    nebulaFlow: number;
+    nebulaDrift: number;
+    nebulaPulse: number;
+    nebulaSpread: number;
     wireframeOpacity: number;
     postEnabled: boolean;
     bloomStrength: number;
@@ -58,10 +65,10 @@ export const defaultVisualParams: VisualParams = {
     renderMode: 'wireframe',
     waveformStyle: 'line',
     cameraMode: 'orbit-reactive',
-    cameraDistance: 80,
+    cameraDistance: 120,
     cameraReactiveAmount: 0.7,
     cameraDamping: 0.1,
-    cameraEnableZoom: false,
+    cameraEnableZoom: true,
     cameraEnablePan: false,
     themeMode: 'dark',
     themePreset: 'mono',
@@ -71,6 +78,12 @@ export const defaultVisualParams: VisualParams = {
     noiseSpeed: 0.6,
     noiseAmp: 15,
     noiseFreq: 0.1,
+    nebulaVariant: 'cloud',
+    nebulaDensity: 0.62,
+    nebulaFlow: 0.55,
+    nebulaDrift: 0.7,
+    nebulaPulse: 0.65,
+    nebulaSpread: 0.58,
     wireframeOpacity: 1.0,
     postEnabled: true,
     bloomStrength: 0.5,
@@ -79,8 +92,8 @@ export const defaultVisualParams: VisualParams = {
     baseRadius: 20,
     showMeters: true,
     showBands: true,
-    showImpactOverlay: true,
-    showOverlayLines: true,
+    showImpactOverlay: false,
+    showOverlayLines: false,
     impactSensitivity: 0.08,
     impactFlash: 0.9,
     impactFrame: 1
@@ -101,6 +114,24 @@ const DEFAULT_PRESETS: VisualPresetMap = {
         waveformStyle: 'mirror',
         noiseAmp: 8,
         noiseFreq: 0.05
+    },
+    nebula_bloom: {
+        ...defaultVisualParams,
+        displayMode: 'nebula',
+        themePreset: 'ice',
+        primaryColor: '#aef4ff',
+        secondaryColor: '#55a7ff',
+        backgroundColor: '#03111c',
+        nebulaVariant: 'vortex',
+        nebulaDensity: 0.74,
+        nebulaFlow: 0.86,
+        nebulaDrift: 0.92,
+        nebulaPulse: 0.82,
+        nebulaSpread: 0.76,
+        noiseAmp: 18,
+        noiseSpeed: 0.75,
+        bloomStrength: 0.8,
+        bloomRadius: 0.7
     }
 };
 
@@ -134,11 +165,19 @@ export const THEME_PRESETS: Record<ThemePreset, ThemePalette> = {
 };
 
 function isDisplayMode(value: unknown): value is DisplayMode {
-    return value === 'sphere' || value === 'waveform';
+    return value === 'sphere' || value === 'waveform' || value === 'nebula';
 }
 
 function isGeometryType(value: unknown): value is GeometryType {
-    return value === 'icosahedron' || value === 'sphere' || value === 'torus' || value === 'cube';
+    return (
+        value === 'icosahedron' ||
+        value === 'sphere' ||
+        value === 'torus' ||
+        value === 'cube' ||
+        value === 'dodecahedron' ||
+        value === 'cone' ||
+        value === 'cylinder'
+    );
 }
 
 function isWaveformStyle(value: unknown): value is WaveformStyle {
@@ -159,6 +198,10 @@ function isThemeMode(value: unknown): value is ThemeMode {
 
 function isThemePreset(value: unknown): value is ThemePreset {
     return value === 'mono' || value === 'sunset' || value === 'ice' || value === 'acid';
+}
+
+function isNebulaVariant(value: unknown): value is NebulaVariant {
+    return value === 'cloud' || value === 'vortex' || value === 'ribbons';
 }
 
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
@@ -186,6 +229,14 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         noiseSpeed: typeof value?.noiseSpeed === 'number' ? value.noiseSpeed : defaultVisualParams.noiseSpeed,
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
         noiseFreq: typeof value?.noiseFreq === 'number' ? value.noiseFreq : defaultVisualParams.noiseFreq,
+        nebulaVariant: isNebulaVariant(value?.nebulaVariant) ? value.nebulaVariant : defaultVisualParams.nebulaVariant,
+        nebulaDensity:
+            typeof value?.nebulaDensity === 'number' ? value.nebulaDensity : defaultVisualParams.nebulaDensity,
+        nebulaFlow: typeof value?.nebulaFlow === 'number' ? value.nebulaFlow : defaultVisualParams.nebulaFlow,
+        nebulaDrift: typeof value?.nebulaDrift === 'number' ? value.nebulaDrift : defaultVisualParams.nebulaDrift,
+        nebulaPulse: typeof value?.nebulaPulse === 'number' ? value.nebulaPulse : defaultVisualParams.nebulaPulse,
+        nebulaSpread:
+            typeof value?.nebulaSpread === 'number' ? value.nebulaSpread : defaultVisualParams.nebulaSpread,
         wireframeOpacity: typeof value?.wireframeOpacity === 'number' ? value.wireframeOpacity : defaultVisualParams.wireframeOpacity,
         postEnabled: typeof value?.postEnabled === 'boolean' ? value.postEnabled : defaultVisualParams.postEnabled,
         bloomStrength: typeof value?.bloomStrength === 'number' ? value.bloomStrength : defaultVisualParams.bloomStrength,
@@ -215,7 +266,9 @@ function readStoredPresets(): VisualPresetMap {
 
         const parsed = JSON.parse(raw) as Record<string, Partial<VisualParams>>;
         const normalized = Object.fromEntries(
-            Object.entries(parsed).map(([name, preset]) => [name, sanitizeParams(preset)])
+            Object.entries(parsed)
+                .filter(([name]) => !(name in DEFAULT_PRESETS))
+                .map(([name, preset]) => [name, sanitizeParams(preset)])
         );
 
         return {
@@ -246,6 +299,10 @@ export function getPresetNames(): string[] {
 export function savePreset(name: string, values: VisualParams = get(params)): string[] {
     const trimmedName = name.trim().toLowerCase().replace(/\s+/g, '_');
     if (!trimmedName) {
+        return getPresetNames();
+    }
+
+    if (trimmedName in DEFAULT_PRESETS) {
         return getPresetNames();
     }
 
@@ -299,7 +356,7 @@ export function importPresets(json: string): string[] {
 
     for (const [name, preset] of Object.entries(parsed)) {
         const trimmedName = name.trim().toLowerCase().replace(/\s+/g, '_');
-        if (!trimmedName) continue;
+        if (!trimmedName || trimmedName in DEFAULT_PRESETS) continue;
         presets[trimmedName] = sanitizeParams(preset);
     }
 

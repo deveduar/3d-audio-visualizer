@@ -200,6 +200,21 @@
                 <T.BoxGeometry args={[$params.baseRadius * 1.5, $params.baseRadius * 1.5, $params.baseRadius * 1.5, 12, 12, 12]} />
                 <T is={material} />
             </T.Mesh>
+        {:else if $params.geometryType === 'dodecahedron'}
+            <T.Mesh>
+                <T.DodecahedronGeometry args={[$params.baseRadius, 3]} />
+                <T is={material} />
+            </T.Mesh>
+        {:else if $params.geometryType === 'cone'}
+            <T.Mesh>
+                <T.ConeGeometry args={[$params.baseRadius * 0.9, $params.baseRadius * 2.1, 96, 18]} />
+                <T is={material} />
+            </T.Mesh>
+        {:else if $params.geometryType === 'cylinder'}
+            <T.Mesh>
+                <T.CylinderGeometry args={[$params.baseRadius * 0.72, $params.baseRadius * 0.72, $params.baseRadius * 2, 72, 18, true]} />
+                <T is={material} />
+            </T.Mesh>
         {:else}
             <T.Mesh>
                 <T.IcosahedronGeometry args={[$params.baseRadius, 4]} />
