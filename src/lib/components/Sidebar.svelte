@@ -64,6 +64,10 @@
     }
 </script>
 
+<button class="mobile-toggle" class:visible={collapsed} onclick={toggleSidebar}>
+    OPEN
+</button>
+
 <aside class="sidebar" class:collapsed>
     <button class="toggle" onclick={toggleSidebar}>
         {collapsed ? 'OPEN' : 'CLOSE'}
@@ -87,7 +91,8 @@
                     tabindex="0"
                 >
                     <label for="file-input" class="drop-label">
-                        DROP AUDIO OR CLICK
+                        <span class="drop-label-desktop">DROP AUDIO OR CLICK</span>
+                        <span class="drop-label-mobile">SELECT AUDIO</span>
                     </label>
                     <input
                         type="file"
@@ -185,6 +190,10 @@
         letter-spacing: 0.2em;
     }
 
+    .mobile-toggle {
+        display: none;
+    }
+
     .content {
         display: flex;
         flex-direction: column;
@@ -264,6 +273,14 @@
         font-size: 11px;
         cursor: pointer;
         opacity: 0.7;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .drop-label-mobile {
+        display: none;
     }
 
     .dropzone input {
@@ -394,6 +411,7 @@
     }
 
     .github-link {
+        display: block;
         color: var(--ui-text);
         text-decoration: none;
         font-size: 10px;
@@ -403,5 +421,82 @@
 
     .github-link:hover {
         opacity: 1;
+    }
+
+    @media (max-width: 900px) {
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 160;
+            min-width: 88px;
+            height: 32px;
+            padding: 0 14px;
+            background: var(--ui-panel-bg);
+            border: 1px solid var(--ui-panel-border);
+            color: var(--ui-text);
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .mobile-toggle.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar {
+            width: 100vw;
+            bottom: 118px;
+            z-index: 120;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .toggle {
+            left: 16px;
+            right: auto;
+            top: 16px;
+            transform: none;
+            width: auto;
+            min-width: 88px;
+            height: 32px;
+            padding: 0 14px;
+            letter-spacing: 0.14em;
+            z-index: 140;
+        }
+
+        .content {
+            padding: 20px 16px 16px;
+        }
+
+        .sidebar-main {
+            padding-bottom: 8px;
+        }
+
+        .dropzone {
+            padding: 14px;
+        }
+
+        .drop-label-desktop {
+            display: none;
+        }
+
+        .drop-label-mobile {
+            display: inline;
+        }
+
+        .track-name {
+            max-width: none;
+        }
+
+        .sidebar-footer {
+            gap: 10px;
+            padding-bottom: 4px;
+        }
     }
 </style>

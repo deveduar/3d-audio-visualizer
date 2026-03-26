@@ -328,4 +328,35 @@
         background: var(--ui-accent);
         border-radius: 50%;
     }
+
+    @media (max-width: 900px) {
+        .ui.sidebar-open {
+            left: 0;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px 14px;
+            align-items: center;
+            padding: 12px 16px 14px;
+        }
+
+        .track-info {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: min(100%, 360px);
+            text-align: left;
+        }
+
+        .controls {
+            justify-content: flex-start;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .volume-control {
+            justify-self: end;
+        }
+    }
 </style>

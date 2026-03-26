@@ -59,9 +59,9 @@
         primaryColor: '#ffffff',
         secondaryColor: '#9f9f9f',
         backgroundColor: '#000000',
-        noiseFreq: 0.1,
-        noiseAmp: 15,
-        noiseSpeed: 0.6,
+        noiseFreq: 0.05,
+        noiseAmp: 2,
+        noiseSpeed: 0.2,
         nebulaVariant: 'cloud' as NebulaVariant,
         nebulaDensity: 0.62,
         nebulaFlow: 0.55,
@@ -563,8 +563,10 @@
     });
 </script>
 
-<div class="editor-shell">
-    <div class="editor" bind:this={container}></div>
+<div class="editor-shell" class:sidebar-open={$sidebarOpen}>
+    <div class="editor-scroll">
+        <div class="editor" bind:this={container}></div>
+    </div>
     {#if localParams.showMeters}
         <div class="meters-panel" class:sidebar-open={$sidebarOpen}>
             <div class="meter-row">
@@ -615,14 +617,49 @@
         position: fixed;
         top: 20px;
         right: 20px;
+        bottom: 132px;
         z-index: 300;
         width: 320px;
+        max-height: calc(100vh - 172px);
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .editor {
+        pointer-events: auto;
+        min-height: 100%;
+    }
+
+    .editor-scroll {
+        height: 100%;
+        max-height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        pointer-events: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
+    }
+
+    .editor-scroll::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .editor-scroll::-webkit-scrollbar-track {
+        background: var(--ui-scroll-track);
+    }
+
+    .editor-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--ui-scroll-thumb), var(--ui-scroll-thumb-soft));
+        border-radius: 999px;
+        border: 2px solid transparent;
     }
 
     :global(.tp-dfwv) {
         width: 300px !important;
-        max-height: calc(100vh - 40px);
-        overflow-y: auto;
+        max-height: none;
+        height: auto;
+        overflow: visible !important;
+        box-sizing: border-box;
         background: var(--ui-panel-bg) !important;
         border: 1px solid var(--ui-panel-border);
         color: var(--ui-text) !important;
@@ -772,10 +809,37 @@
     }
 
     @media (max-width: 1280px) {
+        .editor-shell {
+            top: 16px;
+            right: 16px;
+            bottom: 182px;
+            width: 300px;
+            max-height: calc(100vh - 214px);
+            overflow: hidden;
+        }
+
+        :global(.tp-dfwv) {
+            max-height: 100%;
+            height: 100%;
+            overflow-y: auto !important;
+        }
+
+        .editor-shell.sidebar-open {
+            z-index: 60;
+        }
+
+        .editor-shell.sidebar-open .editor {
+            pointer-events: none;
+        }
+
+        .editor-shell.sidebar-open .editor-scroll {
+            pointer-events: none;
+        }
+
         .meters-panel,
         .band-panel {
             position: absolute;
-            right: 20px;
+            right: 0;
             left: auto;
             width: 300px;
         }
