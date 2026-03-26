@@ -2,7 +2,7 @@
     import { T, useTask } from '@threlte/core';
     import { OrbitControls } from '@threlte/extras';
     import WireframeSphere from './WireframeSphere.svelte';
-    import { params } from '$lib/stores/params';
+    import { cameraResetSignal, params } from '$lib/stores/params';
     import { bass, transient } from '$lib/stores/playlistStore';
     import { get } from 'svelte/store';
 
@@ -31,17 +31,20 @@
     });
 </script>
 
-<T.Group position={[cameraX, cameraY, cameraZ]}>
-    <T.PerspectiveCamera makeDefault position={[0, 0, $params.cameraDistance]} fov={60}>
-        <OrbitControls
-            enableRotate={$params.cameraMode === 'orbit' || $params.cameraMode === 'orbit-reactive'}
-            enableZoom={$params.cameraEnableZoom}
-            enablePan={$params.cameraEnablePan}
-            enableDamping
-            dampingFactor={$params.cameraDamping}
-        />
-    </T.PerspectiveCamera>
-</T.Group>
+{#key $cameraResetSignal}
+    <T.Group position={[cameraX, cameraY, cameraZ]}>
+        <T.PerspectiveCamera makeDefault position={[0, 0, $params.cameraDistance]} fov={60}>
+            <OrbitControls
+                target={[0, 0, 0]}
+                enableRotate={$params.cameraMode === 'orbit' || $params.cameraMode === 'orbit-reactive'}
+                enableZoom={$params.cameraEnableZoom}
+                enablePan={$params.cameraEnablePan}
+                enableDamping
+                dampingFactor={$params.cameraDamping}
+            />
+        </T.PerspectiveCamera>
+    </T.Group>
+{/key}
 
 <T.PointLight position={[10, 10, 10]} intensity={lightA} />
 <T.PointLight position={[-10, -10, -10]} intensity={lightB} />

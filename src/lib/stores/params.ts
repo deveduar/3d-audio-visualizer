@@ -22,11 +22,13 @@ export interface VisualParams {
     noiseAmp: number;
     noiseFreq: number;
     wireframeOpacity: number;
+    postEnabled: boolean;
     bloomStrength: number;
     bloomRadius: number;
     bloomThreshold: number;
     baseRadius: number;
     showMeters: boolean;
+    showBands: boolean;
     showImpactOverlay: boolean;
     impactSensitivity: number;
     impactFlash: number;
@@ -50,11 +52,13 @@ export const defaultVisualParams: VisualParams = {
     noiseAmp: 15,
     noiseFreq: 0.1,
     wireframeOpacity: 1.0,
+    postEnabled: true,
     bloomStrength: 0.5,
     bloomRadius: 0.5,
     bloomThreshold: 0.2,
     baseRadius: 20,
     showMeters: true,
+    showBands: true,
     showImpactOverlay: true,
     impactSensitivity: 0.08,
     impactFlash: 0.9,
@@ -122,11 +126,13 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
         noiseFreq: typeof value?.noiseFreq === 'number' ? value.noiseFreq : defaultVisualParams.noiseFreq,
         wireframeOpacity: typeof value?.wireframeOpacity === 'number' ? value.wireframeOpacity : defaultVisualParams.wireframeOpacity,
+        postEnabled: typeof value?.postEnabled === 'boolean' ? value.postEnabled : defaultVisualParams.postEnabled,
         bloomStrength: typeof value?.bloomStrength === 'number' ? value.bloomStrength : defaultVisualParams.bloomStrength,
         bloomRadius: typeof value?.bloomRadius === 'number' ? value.bloomRadius : defaultVisualParams.bloomRadius,
         bloomThreshold: typeof value?.bloomThreshold === 'number' ? value.bloomThreshold : defaultVisualParams.bloomThreshold,
         baseRadius: typeof value?.baseRadius === 'number' ? value.baseRadius : defaultVisualParams.baseRadius,
         showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters,
+        showBands: typeof value?.showBands === 'boolean' ? value.showBands : defaultVisualParams.showBands,
         showImpactOverlay: typeof value?.showImpactOverlay === 'boolean' ? value.showImpactOverlay : defaultVisualParams.showImpactOverlay,
         impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,
         impactFlash: typeof value?.impactFlash === 'number' ? value.impactFlash : defaultVisualParams.impactFlash,
@@ -165,6 +171,7 @@ function writeStoredPresets(presets: VisualPresetMap): void {
 }
 
 export const params = writable<VisualParams>({ ...defaultVisualParams });
+export const cameraResetSignal = writable(0);
 
 export function getPresetMap(): VisualPresetMap {
     return readStoredPresets();
@@ -210,6 +217,10 @@ export function deletePreset(name: string): string[] {
 
 export function resetParams(): void {
     params.set({ ...defaultVisualParams });
+}
+
+export function resetCameraView(): void {
+    cameraResetSignal.update((value) => value + 1);
 }
 
 export function exportPresets(): string {

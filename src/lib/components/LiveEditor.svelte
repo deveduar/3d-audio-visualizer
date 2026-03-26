@@ -8,6 +8,7 @@
         type GeometryType,
         type RenderMode,
         type WaveformStyle,
+        resetCameraView,
         defaultVisualParams,
         getPresetNames,
         savePreset,
@@ -51,10 +52,12 @@
         noiseSpeed: 0.6,
         baseRadius: 20,
         wireframeOpacity: 1.0,
+        postEnabled: true,
         bloomStrength: 0.5,
         bloomRadius: 0.5,
         bloomThreshold: 0.2,
         showMeters: true,
+        showBands: true,
         showImpactOverlay: true,
         impactSensitivity: 0.08,
         impactFlash: 0.9,
@@ -95,8 +98,9 @@
         const viewFolder = editorPane.addFolder({ title: 'VIEW' });
         viewFolder
             .addBinding(localParams, 'displayMode', {
+                label: 'mode',
                 options: {
-                    Sphere: 'sphere',
+                    Geometry: 'sphere',
                     Waveform: 'waveform'
                 }
             })
@@ -179,6 +183,7 @@
         cameraFolder
             .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
             .on('change', syncToStore);
+        cameraFolder.addButton({ title: 'RESET CAMERA' }).on('click', handleResetCamera);
 
         const audioFolder = editorPane.addFolder({ title: 'AUDIO' });
         audioFolder
@@ -186,24 +191,30 @@
                 label: 'meters'
             })
             .on('change', syncToStore);
+        audioFolder
+            .addBinding(localParams, 'showBands', {
+                label: 'bands'
+            })
+            .on('change', syncToStore);
 
-        const eventsFolder = editorPane.addFolder({ title: 'EVENTS' });
-        eventsFolder
+        const overlayFolder = editorPane.addFolder({ title: 'OVERLAY' });
+        overlayFolder
             .addBinding(localParams, 'showImpactOverlay', {
                 label: 'overlay'
             })
             .on('change', syncToStore);
-        eventsFolder
+        overlayFolder
             .addBinding(localParams, 'impactSensitivity', { label: 'threshold', min: 0.02, max: 0.3, step: 0.01 })
             .on('change', syncToStore);
-        eventsFolder
+        overlayFolder
             .addBinding(localParams, 'impactFlash', { label: 'flash', min: 0.2, max: 1.5, step: 0.05 })
             .on('change', syncToStore);
-        eventsFolder
+        overlayFolder
             .addBinding(localParams, 'impactFrame', { label: 'frame', min: 0.2, max: 1.5, step: 0.05 })
             .on('change', syncToStore);
 
         const postFolder = editorPane.addFolder({ title: 'POST' });
+        postFolder.addBinding(localParams, 'postEnabled', { label: 'enabled' }).on('change', syncToStore);
         postFolder.addBinding(localParams, 'bloomStrength', { min: 0, max: 2, step: 0.1 }).on('change', syncToStore);
         postFolder.addBinding(localParams, 'bloomRadius', { min: 0, max: 1, step: 0.1 }).on('change', syncToStore);
         postFolder.addBinding(localParams, 'bloomThreshold', { min: 0, max: 1, step: 0.1 }).on('change', syncToStore);
@@ -248,10 +259,23 @@
 
     function handleResetParams() {
         resetParams();
+        resetCameraView();
         Object.assign(localParams, defaultVisualParams);
         presetState.selectedPreset = 'default';
         presetState.presetName = 'default';
         rebuildPane();
+    }
+
+    function handleResetCamera() {
+        localParams.cameraMode = defaultVisualParams.cameraMode;
+        localParams.cameraDistance = defaultVisualParams.cameraDistance;
+        localParams.cameraReactiveAmount = defaultVisualParams.cameraReactiveAmount;
+        localParams.cameraDamping = defaultVisualParams.cameraDamping;
+        localParams.cameraEnableZoom = defaultVisualParams.cameraEnableZoom;
+        localParams.cameraEnablePan = defaultVisualParams.cameraEnablePan;
+        syncToStore();
+        resetCameraView();
+        refreshPane();
     }
 
     function handleExportPresets() {
@@ -298,10 +322,12 @@
             localParams.noiseSpeed = p.noiseSpeed;
             localParams.baseRadius = p.baseRadius;
             localParams.wireframeOpacity = p.wireframeOpacity;
+            localParams.postEnabled = p.postEnabled;
             localParams.bloomStrength = p.bloomStrength;
             localParams.bloomRadius = p.bloomRadius;
             localParams.bloomThreshold = p.bloomThreshold;
             localParams.showMeters = p.showMeters;
+            localParams.showBands = p.showBands;
             localParams.showImpactOverlay = p.showImpactOverlay;
             localParams.impactSensitivity = p.impactSensitivity;
             localParams.impactFlash = p.impactFlash;
@@ -368,6 +394,8 @@
                 <span class="meter-value">{lufsValue}</span>
             </div>
         </div>
+    {/if}
+    {#if localParams.showBands}
         <div class="band-panel">
             <div class="band-row">
                 <span class="band-label">BASS</span>
@@ -400,12 +428,13 @@
         top: 20px;
         right: 20px;
         z-index: 300;
-        display: grid;
-        gap: 12px;
+        width: 320px;
     }
 
     :global(.tp-dfwv) {
         width: 300px !important;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
     }
 
     :global(.tp-lblv_l),
@@ -416,6 +445,10 @@
     }
 
     .meters-panel {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 290;
         width: 300px;
         padding: 12px 14px;
         background: rgba(0, 0, 0, 0.82);
@@ -460,6 +493,10 @@
     }
 
     .band-panel {
+        position: fixed;
+        top: 118px;
+        left: 20px;
+        z-index: 290;
         width: 300px;
         padding: 12px 14px;
         background: rgba(0, 0, 0, 0.82);

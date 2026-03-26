@@ -60,7 +60,7 @@
 {#if $params.showImpactOverlay}
     <div
         class="impact-overlay"
-        style={`--impact:${impact}; --flash:${flash}; --frame:${framePulse}; --line-offset:${lineOffset}px;`}
+        style={`--impact:${impact}; --flash:${flash}; --frame:${framePulse}; --line-offset:${lineOffset}px; --burst-alpha:${$params.cameraEnablePan ? 0 : 1};`}
     >
         <div class="impact-burst"></div>
         <div class="impact-lines"></div>
@@ -84,7 +84,7 @@
     }
 
     .impact-burst {
-        opacity: calc(var(--flash) * 0.65);
+        opacity: calc(var(--flash) * 0.65 * var(--burst-alpha));
         background:
             radial-gradient(circle at 50% 50%, rgba(255,255,255,0.32), transparent 22%),
             radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12), transparent 48%);

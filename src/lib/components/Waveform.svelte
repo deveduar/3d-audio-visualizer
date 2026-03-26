@@ -45,14 +45,16 @@
         if (points.length > 0) {
             const style = $params.waveformStyle;
             const gain = 0.45 + $params.noiseAmp / 40 + $transient * 0.35;
-            const lineWidth = compact ? 1.5 : 1.5 + $params.bloomRadius * 3;
+            const bloomRadius = $params.postEnabled ? $params.bloomRadius : 0;
+            const bloomStrength = $params.postEnabled ? $params.bloomStrength : 0;
+            const threshold = ($params.postEnabled ? $params.bloomThreshold : 0) * 0.45;
+            const lineWidth = compact ? 1.5 : 1.5 + bloomRadius * 3;
             const alpha = 0.5 + $params.wireframeOpacity * 0.45 + $transient * 0.12;
-            const threshold = $params.bloomThreshold * 0.45;
 
             ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-            ctx.fillStyle = `rgba(255,255,255,${0.2 + $params.bloomStrength * 0.18})`;
+            ctx.fillStyle = `rgba(255,255,255,${0.2 + bloomStrength * 0.18})`;
             ctx.lineWidth = lineWidth;
-            ctx.shadowBlur = $params.bloomStrength * 24 + $transient * 18;
+            ctx.shadowBlur = bloomStrength * 24 + $transient * 18;
             ctx.shadowColor = 'rgba(255,255,255,0.9)';
 
             if (style === 'bars') {

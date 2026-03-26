@@ -168,9 +168,9 @@
         material.uniforms.uNoiseFreq.value = p.noiseFreq;
         material.uniforms.uNoiseAmp.value = p.noiseAmp;
         material.uniforms.uOpacity.value = p.wireframeOpacity;
-        material.uniforms.uBloomStrength.value = p.bloomStrength;
-        material.uniforms.uBloomRadius.value = p.bloomRadius;
-        material.uniforms.uBloomThreshold.value = p.bloomThreshold;
+        material.uniforms.uBloomStrength.value = p.postEnabled ? p.bloomStrength : 0;
+        material.uniforms.uBloomRadius.value = p.postEnabled ? p.bloomRadius : 0;
+        material.uniforms.uBloomThreshold.value = p.postEnabled ? p.bloomThreshold : 0;
         material.wireframe = p.renderMode === 'wireframe';
     });
 </script>
