@@ -346,11 +346,12 @@
             grid-column: 1 / -1;
             justify-self: center;
             width: min(100%, 360px);
-            text-align: left;
+            text-align: center;
         }
 
         .controls {
-            justify-content: flex-start;
+            grid-column: 1 / -1;
+            justify-self: center;
             gap: 10px;
             flex-wrap: wrap;
         }
