@@ -15,7 +15,7 @@
         importPresets,
         resetParams
     } from '$lib/stores/params';
-    import { dbLevel, lufs } from '$lib/stores/playlistStore';
+    import { bass, dbLevel, lufs, mid, transient, treble } from '$lib/stores/playlistStore';
 
     type EditorPane = FolderApi & {
         refresh: () => void;
@@ -27,6 +27,10 @@
     let pane: EditorPane | null = null;
     let dbValue = $state('-60.0');
     let lufsValue = $state('-60.0');
+    let bassValue = $state(0);
+    let midValue = $state(0);
+    let trebleValue = $state(0);
+    let transientValue = $state(0);
     let presetNames = $state<string[]>(getPresetNames());
 
     const localParams = $state({
@@ -235,6 +239,22 @@
             lufsValue = value.toFixed(1);
         });
 
+        const unsubBass = bass.subscribe((value) => {
+            bassValue = value;
+        });
+
+        const unsubMid = mid.subscribe((value) => {
+            midValue = value;
+        });
+
+        const unsubTreble = treble.subscribe((value) => {
+            trebleValue = value;
+        });
+
+        const unsubTransient = transient.subscribe((value) => {
+            transientValue = value;
+        });
+
         refreshPresetNames();
         rebuildPane();
 
@@ -242,6 +262,10 @@
             unsubParams();
             unsubDb();
             unsubLufs();
+            unsubBass();
+            unsubMid();
+            unsubTreble();
+            unsubTransient();
             pane?.dispose();
         };
     });
@@ -264,6 +288,28 @@
                     <div class="meter-fill" style={`width: ${Math.max(0, Math.min(100, ((Number(lufsValue) + 60) / 60) * 100))}%`}></div>
                 </div>
                 <span class="meter-value">{lufsValue}</span>
+            </div>
+        </div>
+        <div class="band-panel">
+            <div class="band-row">
+                <span class="band-label">BASS</span>
+                <div class="band-bar"><div class="band-fill" style={`width: ${bassValue * 100}%`}></div></div>
+                <span class="band-value">{Math.round(bassValue * 100)}</span>
+            </div>
+            <div class="band-row">
+                <span class="band-label">MID</span>
+                <div class="band-bar"><div class="band-fill" style={`width: ${midValue * 100}%`}></div></div>
+                <span class="band-value">{Math.round(midValue * 100)}</span>
+            </div>
+            <div class="band-row">
+                <span class="band-label">TREB</span>
+                <div class="band-bar"><div class="band-fill" style={`width: ${trebleValue * 100}%`}></div></div>
+                <span class="band-value">{Math.round(trebleValue * 100)}</span>
+            </div>
+            <div class="band-row transient-row">
+                <span class="band-label">PEAK</span>
+                <div class="band-bar"><div class="band-fill transient-fill" style={`width: ${transientValue * 100}%`}></div></div>
+                <span class="band-value">{Math.round(transientValue * 100)}</span>
             </div>
         </div>
     {/if}
@@ -333,5 +379,53 @@
     .meter-fill {
         height: 100%;
         background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.45) 100%);
+    }
+
+    .band-panel {
+        width: 300px;
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        font-family: 'Courier New', monospace;
+    }
+
+    .band-row {
+        display: grid;
+        grid-template-columns: 42px 1fr 38px;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .band-row + .band-row {
+        margin-top: 10px;
+    }
+
+    .band-label,
+    .band-value {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+    }
+
+    .band-value {
+        text-align: right;
+    }
+
+    .band-bar {
+        position: relative;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        overflow: hidden;
+    }
+
+    .band-fill {
+        height: 100%;
+        background: linear-gradient(90deg, rgba(255,255,255,0.5) 0%, #fff 100%);
+    }
+
+    .transient-fill {
+        background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, #fff 100%);
     }
 </style>

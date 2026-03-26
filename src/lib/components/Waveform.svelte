@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { waveformData, isPlaying, rms } from '$lib/stores/playlistStore';
+    import { waveformData, isPlaying, rms, transient } from '$lib/stores/playlistStore';
     import { onMount } from 'svelte';
     import { params } from '$lib/stores/params';
 
@@ -43,15 +43,15 @@
 
         if (points.length > 0) {
             const style = $params.waveformStyle;
-            const gain = 0.45 + $params.noiseAmp / 40;
+            const gain = 0.45 + $params.noiseAmp / 40 + $transient * 0.35;
             const lineWidth = compact ? 1.5 : 1.5 + $params.bloomRadius * 3;
-            const alpha = 0.5 + $params.wireframeOpacity * 0.45;
+            const alpha = 0.5 + $params.wireframeOpacity * 0.45 + $transient * 0.12;
             const threshold = $params.bloomThreshold * 0.45;
 
             ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
             ctx.fillStyle = `rgba(255,255,255,${0.2 + $params.bloomStrength * 0.18})`;
             ctx.lineWidth = lineWidth;
-            ctx.shadowBlur = $params.bloomStrength * 24;
+            ctx.shadowBlur = $params.bloomStrength * 24 + $transient * 18;
             ctx.shadowColor = 'rgba(255,255,255,0.9)';
 
             if (style === 'bars') {

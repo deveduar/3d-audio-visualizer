@@ -11,6 +11,7 @@ import {
     bass,
     mid,
     treble,
+    transient,
     dbLevel,
     lufs,
     waveformData,
@@ -22,6 +23,12 @@ let player: Tone.Player | null = null;
 let limiter: Tone.Limiter | null = null;
 let meter: Tone.Meter | null = null;
 let analyser: Tone.Analyser | null = null;
+let bassFilter: Tone.Filter | null = null;
+let midFilter: Tone.Filter | null = null;
+let trebleFilter: Tone.Filter | null = null;
+let bassMeter: Tone.Meter | null = null;
+let midMeter: Tone.Meter | null = null;
+let trebleMeter: Tone.Meter | null = null;
 let animationId: number | null = null;
 let loaded = false;
 
@@ -33,6 +40,18 @@ let stopIntent: 'none' | 'pause' | 'seek' | 'track-change' = 'none';
 let lufsHistory: number[] = [];
 let operationId = 0;
 let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+let smoothedRms = 0;
+let smoothedBass = 0;
+let smoothedMid = 0;
+let smoothedTreble = 0;
+let smoothedDb = -60;
+let transientEnergy = 0;
+let transientCooldown = 0;
+
+const ATTACK_RATE = 0.22;
+const RELEASE_RATE = 0.08;
+const TRANSIENT_THRESHOLD = 0.16;
+const TRANSIENT_COOLDOWN_FRAMES = 8;
 
 function resetPlaybackPosition(time = 0): void {
     playbackOffset = time;
@@ -51,6 +70,34 @@ function releaseTransition(delay = 200): void {
     }, delay);
 }
 
+function smoothTowards(current: number, target: number, attack = ATTACK_RATE, release = RELEASE_RATE): number {
+    const factor = target > current ? attack : release;
+    return current + (target - current) * factor;
+}
+
+function meterToUnit(value: number, gain = 1.2): number {
+    return Math.max(0, Math.min(1, Tone.dbToGain(value) * gain));
+}
+
+function resetAnalysisState(): void {
+    lufsHistory = [];
+    smoothedRms = 0;
+    smoothedBass = 0;
+    smoothedMid = 0;
+    smoothedTreble = 0;
+    smoothedDb = -60;
+    transientEnergy = 0;
+    transientCooldown = 0;
+    rms.set(0);
+    bass.set(0);
+    mid.set(0);
+    treble.set(0);
+    transient.set(0);
+    dbLevel.set(-60);
+    lufs.set(-60);
+    waveformData.set(null);
+}
+
 export async function initAudio(): Promise<void> {
     const context = Tone.getContext();
     if (context.state !== 'running') {
@@ -62,16 +109,43 @@ export async function initAudio(): Promise<void> {
         transport.start();
     }
     
-    limiter = new Tone.Limiter(-1).toDestination();
+    limiter = new Tone.Limiter(-1);
     meter = new Tone.Meter();
     analyser = new Tone.Analyser('waveform', 512);
+    bassFilter = new Tone.Filter({
+        type: 'lowpass',
+        frequency: 180,
+        rolloff: -24
+    });
+    midFilter = new Tone.Filter({
+        type: 'bandpass',
+        frequency: 1000,
+        Q: 0.9
+    });
+    trebleFilter = new Tone.Filter({
+        type: 'highpass',
+        frequency: 2500,
+        rolloff: -24
+    });
+    bassMeter = new Tone.Meter();
+    midMeter = new Tone.Meter();
+    trebleMeter = new Tone.Meter();
     
     player = new Tone.Player({
         loop: false,
         volume: Tone.gainToDb(get(volume))
     });
     
-    player.chain(limiter, meter, analyser, Tone.Destination);
+    player.connect(limiter);
+    limiter.toDestination();
+    limiter.connect(meter);
+    limiter.connect(analyser);
+    limiter.connect(bassFilter);
+    limiter.connect(midFilter);
+    limiter.connect(trebleFilter);
+    bassFilter.connect(bassMeter);
+    midFilter.connect(midMeter);
+    trebleFilter.connect(trebleMeter);
     
     player.onstop = () => {
         const intent = stopIntent;
@@ -137,10 +211,7 @@ export async function loadCurrentTrack(requestId = ++operationId): Promise<boole
     loaded = false;
     isPlaying.set(false);
     resetPlaybackPosition(0);
-    lufsHistory = [];
-    dbLevel.set(-60);
-    lufs.set(-60);
-    waveformData.set(null);
+    resetAnalysisState();
     
     await player.load(track.url);
 
@@ -292,43 +363,51 @@ function startLoop(): void {
             }
         }
         
-        if (analyser && meter) {
+        if (analyser && meter && bassMeter && midMeter && trebleMeter) {
             try {
                 const waveformValues = analyser.getValue() as Float32Array;
                 const meterValue = meter.getValue() as number;
-                
-                const rmsValue = Math.max(0, Tone.dbToGain(meterValue));
-                rms.set(rmsValue);
-                dbLevel.set(meterValue);
+                const bassValue = bassMeter.getValue() as number;
+                const midValue = midMeter.getValue() as number;
+                const trebleValue = trebleMeter.getValue() as number;
+
+                const targetRms = meterToUnit(meterValue);
+                const targetBass = meterToUnit(bassValue, 1.7);
+                const targetMid = meterToUnit(midValue, 1.55);
+                const targetTreble = meterToUnit(trebleValue, 1.45);
+
+                smoothedRms = smoothTowards(smoothedRms, targetRms);
+                smoothedBass = smoothTowards(smoothedBass, targetBass, 0.26, 0.09);
+                smoothedMid = smoothTowards(smoothedMid, targetMid, 0.24, 0.08);
+                smoothedTreble = smoothTowards(smoothedTreble, targetTreble, 0.24, 0.08);
+                smoothedDb = smoothTowards(smoothedDb, meterValue, 0.18, 0.06);
+
+                const transientDelta = smoothedRms - (smoothedBass * 0.35 + smoothedMid * 0.25);
+                if (transientCooldown > 0) {
+                    transientCooldown -= 1;
+                }
+                if (transientDelta > TRANSIENT_THRESHOLD && transientCooldown === 0) {
+                    transientEnergy = Math.min(1, transientDelta * 3.2);
+                    transientCooldown = TRANSIENT_COOLDOWN_FRAMES;
+                } else {
+                    transientEnergy *= 0.88;
+                }
+
+                rms.set(smoothedRms);
+                bass.set(smoothedBass);
+                mid.set(smoothedMid);
+                treble.set(smoothedTreble);
+                transient.set(transientEnergy);
+                dbLevel.set(smoothedDb);
                 waveformData.set(Float32Array.from(waveformValues));
 
-                lufsHistory.push(meterValue);
+                lufsHistory.push(smoothedDb);
                 if (lufsHistory.length > 30) {
                     lufsHistory.shift();
                 }
 
                 const averagedLufs = lufsHistory.reduce((sum, value) => sum + value, 0) / Math.max(1, lufsHistory.length);
                 lufs.set(averagedLufs);
-                
-                const bins = waveformValues.length;
-                const bassEnd = Math.floor(bins * 0.1);
-                const midEnd = Math.floor(bins * 0.5);
-                
-                let bassSum = 0, midSum = 0, trebleSum = 0;
-                
-                for (let i = 0; i < bassEnd; i++) {
-                    bassSum += Math.abs(waveformValues[i]);
-                }
-                for (let i = bassEnd; i < midEnd; i++) {
-                    midSum += Math.abs(waveformValues[i]);
-                }
-                for (let i = midEnd; i < bins; i++) {
-                    trebleSum += Math.abs(waveformValues[i]);
-                }
-                
-                bass.set(Math.max(0, Math.min(1, bassSum / Math.max(1, bassEnd) * 2.5)));
-                mid.set(Math.max(0, Math.min(1, midSum / Math.max(1, midEnd - bassEnd) * 2.5)));
-                treble.set(Math.max(0, Math.min(1, trebleSum / Math.max(1, bins - midEnd) * 2.5)));
             } catch (e) {}
         }
         
@@ -360,11 +439,34 @@ export function cleanup(): void {
         analyser = null;
     }
     loaded = false;
-    lufsHistory = [];
-    waveformData.set(null);
+    resetAnalysisState();
     if (transitionTimeout) {
         clearTimeout(transitionTimeout);
         transitionTimeout = null;
+    }
+    if (bassFilter) {
+        bassFilter.dispose();
+        bassFilter = null;
+    }
+    if (midFilter) {
+        midFilter.dispose();
+        midFilter = null;
+    }
+    if (trebleFilter) {
+        trebleFilter.dispose();
+        trebleFilter = null;
+    }
+    if (bassMeter) {
+        bassMeter.dispose();
+        bassMeter = null;
+    }
+    if (midMeter) {
+        midMeter.dispose();
+        midMeter = null;
+    }
+    if (trebleMeter) {
+        trebleMeter.dispose();
+        trebleMeter = null;
     }
 }
 

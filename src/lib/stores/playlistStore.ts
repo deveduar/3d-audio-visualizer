@@ -18,6 +18,7 @@ export const rms = writable(0);
 export const bass = writable(0);
 export const mid = writable(0);
 export const treble = writable(0);
+export const transient = writable(0);
 export const dbLevel = writable(-60);
 export const lufs = writable(-60);
 export const waveformData = writable<Float32Array | null>(null);
@@ -159,6 +160,7 @@ export function cleanup(): void {
     bass.set(0);
     mid.set(0);
     treble.set(0);
+    transient.set(0);
     dbLevel.set(-60);
     lufs.set(-60);
     waveformData.set(null);

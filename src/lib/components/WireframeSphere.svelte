@@ -2,7 +2,7 @@
     import { T, useTask } from '@threlte/core';
     import { ShaderMaterial, DoubleSide } from 'three';
     import { get } from 'svelte/store';
-    import { rms, bass, treble, currentIndex } from '$lib/stores/playlistStore';
+    import { rms, bass, transient, treble, currentIndex } from '$lib/stores/playlistStore';
     import { params } from '$lib/stores/params';
 
     let time = $state(0);
@@ -24,6 +24,7 @@
         uniform float uNoiseAmp;
         uniform float uRMS;
         uniform float uBass;
+        uniform float uTransient;
 
         varying float vDisplacement;
 
@@ -93,7 +94,7 @@
 
         void main() {
             float noise = snoise(vec3(position * uNoiseFreq + uTime));
-            float displacement = noise * uNoiseAmp * uRMS * (1.0 + uBass * 2.0);
+            float displacement = noise * uNoiseAmp * (uRMS + uTransient * 0.55) * (1.0 + uBass * 2.0);
 
             vDisplacement = displacement;
             vec3 newPosition = position + normal * displacement;
@@ -105,6 +106,7 @@
     const fragmentShader = `
         uniform float uOpacity;
         uniform float uTreble;
+        uniform float uTransient;
         uniform float uBloomStrength;
         uniform float uBloomRadius;
         uniform float uBloomThreshold;
@@ -117,7 +119,7 @@
             float radius = mix(0.2, 8.0, uBloomRadius);
             float glow = smoothstep(threshold, threshold + radius, absDisp);
             float bloom = glow * (0.4 + uBloomStrength);
-            float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25);
+            float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25) + uTransient * 0.35;
             float alpha = clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
 
             gl_FragColor = vec4(vec3(brightness), alpha);
@@ -136,6 +138,7 @@
             uNoiseAmp: { value: 15 },
             uRMS: { value: 0.1 },
             uBass: { value: 0 },
+            uTransient: { value: 0 },
             uTreble: { value: 0 },
             uOpacity: { value: 1.0 },
             uBloomStrength: { value: 0.5 },
@@ -150,13 +153,15 @@
         rotation += delta * 0.2;
 
         const currentRms = Math.max(0.1, get(rms));
-        const targetScale = 0.55 + currentRms * 1.5;
+        const currentTransient = get(transient);
+        const targetScale = 0.55 + currentRms * 1.5 + currentTransient * 0.6;
         scale = scale + (targetScale - scale) * 0.1;
         animScale += (1 - animScale) * 0.05;
 
         material.uniforms.uTime.value = time;
         material.uniforms.uRMS.value = currentRms;
         material.uniforms.uBass.value = get(bass);
+        material.uniforms.uTransient.value = currentTransient;
         material.uniforms.uTreble.value = get(treble);
         material.uniforms.uNoiseFreq.value = p.noiseFreq;
         material.uniforms.uNoiseAmp.value = p.noiseAmp;
