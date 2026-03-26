@@ -164,9 +164,27 @@
     .content {
         padding: 20px;
         height: 100%;
+        max-height: calc(100vh - 40px);
+        padding-bottom: 160px;
         overflow-y: auto;
         color: white;
         font-family: 'Courier New', monospace;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.28) rgba(255,255,255,0.06);
+    }
+
+    .content::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .content::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.14));
+        border-radius: 999px;
+        border: 2px solid rgba(0, 0, 0, 0.2);
     }
 
     h2 {
@@ -227,6 +245,7 @@
 
     .track-btn {
         flex: 1;
+        min-width: 0;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -255,6 +274,8 @@
     }
 
     .track-name {
+        min-width: 0;
+        flex: 1;
         font-size: 12px;
         opacity: 0.8;
         white-space: nowrap;
@@ -263,6 +284,7 @@
     }
 
     .remove-btn {
+        flex-shrink: 0;
         background: none;
         border: none;
         color: white;

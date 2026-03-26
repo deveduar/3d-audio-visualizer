@@ -27,10 +27,10 @@
             }
 
             if (value > $params.impactSensitivity && value >= lastTransient) {
-                const shapedImpact = Math.min(1, value * (1.8 + $params.impactFrame * 0.4));
+                const shapedImpact = Math.min(1, value * (1.8 + $params.impactFrame * 0.7));
                 impact = Math.max(impact, shapedImpact);
                 flash = Math.max(flash, Math.min(1, shapedImpact * $params.impactFlash));
-                framePulse = Math.max(framePulse, Math.min(1, shapedImpact * (0.85 + $params.impactFrame * 0.55)));
+                framePulse = Math.max(framePulse, Math.min(1, shapedImpact * (0.85 + $params.impactFrame * 0.8)));
                 pulseSeed += 1;
                 lineOffset = ((pulseSeed * 7) % 22) - 11;
             }
@@ -63,7 +63,9 @@
         style={`--impact:${impact}; --flash:${flash}; --frame:${framePulse}; --line-offset:${lineOffset}px; --burst-alpha:${$params.cameraEnablePan ? 0 : 1};`}
     >
         <div class="impact-burst"></div>
-        <div class="impact-lines"></div>
+        {#if $params.showOverlayLines}
+            <div class="impact-lines"></div>
+        {/if}
     </div>
 {/if}
 
@@ -93,18 +95,18 @@
     }
 
     .impact-lines {
-        opacity: calc(var(--impact) * 0.45);
+        opacity: calc(var(--impact) * 0.22 + var(--frame) * 0.28);
         background:
             repeating-linear-gradient(
                 180deg,
-                rgba(255,255,255,0.08) 0px,
-                rgba(255,255,255,0.08) 1px,
+                rgba(255,255,255,0.1) 0px,
+                rgba(255,255,255,0.1) 1px,
                 transparent 1px,
-                transparent 8px
+                transparent calc(10px - var(--frame) * 2px)
             );
         transform:
             translateY(var(--line-offset))
-            scaleY(calc(1 + var(--impact) * 0.08));
+            scaleY(calc(1 + var(--impact) * 0.14 + var(--frame) * 0.06));
         mix-blend-mode: screen;
     }
 

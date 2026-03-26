@@ -30,6 +30,7 @@ export interface VisualParams {
     showMeters: boolean;
     showBands: boolean;
     showImpactOverlay: boolean;
+    showOverlayLines: boolean;
     impactSensitivity: number;
     impactFlash: number;
     impactFrame: number;
@@ -60,6 +61,7 @@ export const defaultVisualParams: VisualParams = {
     showMeters: true,
     showBands: true,
     showImpactOverlay: true,
+    showOverlayLines: true,
     impactSensitivity: 0.08,
     impactFlash: 0.9,
     impactFrame: 1
@@ -134,6 +136,7 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters,
         showBands: typeof value?.showBands === 'boolean' ? value.showBands : defaultVisualParams.showBands,
         showImpactOverlay: typeof value?.showImpactOverlay === 'boolean' ? value.showImpactOverlay : defaultVisualParams.showImpactOverlay,
+        showOverlayLines: typeof value?.showOverlayLines === 'boolean' ? value.showOverlayLines : defaultVisualParams.showOverlayLines,
         impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,
         impactFlash: typeof value?.impactFlash === 'number' ? value.impactFlash : defaultVisualParams.impactFlash,
         impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame

@@ -17,15 +17,16 @@
         const low = get(bass);
         const p = get(params);
         const reactiveEnabled = p.cameraMode === 'reactive' || p.cameraMode === 'orbit-reactive';
-        const eventIntensity = reactiveEnabled ? impact * p.cameraReactiveAmount * (0.45 + p.impactFrame * 1.2) : 0;
+        const dampingFactor = 0.04 + p.cameraDamping * 0.3;
+        const eventIntensity = reactiveEnabled ? impact * p.cameraReactiveAmount * (0.8 + p.impactFrame * 1.6) : 0;
         const cameraPush = eventIntensity * (0.4 + p.impactFlash * 1.4);
-        const targetX = low * 1.1 * cameraPush;
-        const targetY = eventIntensity * 0.8;
-        const targetZ = -eventIntensity * (3.5 + p.impactFlash * 2.5) - low * 2.2 * p.cameraReactiveAmount;
+        const targetX = low * 2.4 * cameraPush;
+        const targetY = eventIntensity * 1.6;
+        const targetZ = -eventIntensity * (8 + p.impactFlash * 5) - low * 5 * p.cameraReactiveAmount;
 
-        cameraX += (targetX - cameraX) * p.cameraDamping;
-        cameraY += (targetY - cameraY) * p.cameraDamping;
-        cameraZ += (targetZ - cameraZ) * p.cameraDamping;
+        cameraX += (targetX - cameraX) * dampingFactor;
+        cameraY += (targetY - cameraY) * dampingFactor;
+        cameraZ += (targetZ - cameraZ) * dampingFactor;
         lightA += ((1 + low * 0.45 + eventIntensity * (1.3 + p.impactFlash)) - lightA) * 0.12;
         lightB += ((0.5 + eventIntensity * (0.7 + p.impactFrame * 0.55)) - lightB) * 0.12;
     });
@@ -40,7 +41,7 @@
                 enableZoom={$params.cameraEnableZoom}
                 enablePan={$params.cameraEnablePan}
                 enableDamping
-                dampingFactor={$params.cameraDamping}
+                dampingFactor={0.04 + $params.cameraDamping * 0.3}
             />
         </T.PerspectiveCamera>
     </T.Group>

@@ -59,6 +59,7 @@
         showMeters: true,
         showBands: true,
         showImpactOverlay: true,
+        showOverlayLines: true,
         impactSensitivity: 0.08,
         impactFlash: 0.9,
         impactFrame: 1
@@ -169,13 +170,13 @@
             })
             .on('change', syncToStore);
         cameraFolder
-            .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 140, step: 1 })
+            .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 400, step: 1 })
             .on('change', syncToStore);
         cameraFolder
-            .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 1.5, step: 0.05 })
+            .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 6, step: 0.1 })
             .on('change', syncToStore);
         cameraFolder
-            .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.25, step: 0.01 })
+            .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.9, step: 0.01 })
             .on('change', syncToStore);
         cameraFolder
             .addBinding(localParams, 'cameraEnableZoom', { label: 'zoom' })
@@ -204,13 +205,18 @@
             })
             .on('change', syncToStore);
         overlayFolder
-            .addBinding(localParams, 'impactSensitivity', { label: 'threshold', min: 0.02, max: 0.3, step: 0.01 })
+            .addBinding(localParams, 'showOverlayLines', {
+                label: 'lines'
+            })
+            .on('change', syncToStore);
+        overlayFolder
+            .addBinding(localParams, 'impactSensitivity', { label: 'threshold', min: 0.02, max: 0.6, step: 0.01 })
             .on('change', syncToStore);
         overlayFolder
             .addBinding(localParams, 'impactFlash', { label: 'flash', min: 0.2, max: 1.5, step: 0.05 })
             .on('change', syncToStore);
         overlayFolder
-            .addBinding(localParams, 'impactFrame', { label: 'frame', min: 0.2, max: 1.5, step: 0.05 })
+            .addBinding(localParams, 'impactFrame', { label: 'lines', min: 0.2, max: 2.5, step: 0.05 })
             .on('change', syncToStore);
 
         const postFolder = editorPane.addFolder({ title: 'POST' });
@@ -329,6 +335,7 @@
             localParams.showMeters = p.showMeters;
             localParams.showBands = p.showBands;
             localParams.showImpactOverlay = p.showImpactOverlay;
+            localParams.showOverlayLines = p.showOverlayLines;
             localParams.impactSensitivity = p.impactSensitivity;
             localParams.impactFlash = p.impactFlash;
             localParams.impactFrame = p.impactFrame;
@@ -435,6 +442,22 @@
         width: 300px !important;
         max-height: calc(100vh - 40px);
         overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.28) rgba(255,255,255,0.06);
+    }
+
+    :global(.tp-dfwv::-webkit-scrollbar) {
+        width: 10px;
+    }
+
+    :global(.tp-dfwv::-webkit-scrollbar-track) {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    :global(.tp-dfwv::-webkit-scrollbar-thumb) {
+        background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.14));
+        border-radius: 999px;
+        border: 2px solid rgba(0, 0, 0, 0.2);
     }
 
     :global(.tp-lblv_l),
@@ -447,8 +470,8 @@
     .meters-panel {
         position: fixed;
         top: 20px;
-        left: 20px;
-        z-index: 290;
+        left: 316px;
+        z-index: 70;
         width: 300px;
         padding: 12px 14px;
         background: rgba(0, 0, 0, 0.82);
@@ -495,8 +518,8 @@
     .band-panel {
         position: fixed;
         top: 118px;
-        left: 20px;
-        z-index: 290;
+        left: 316px;
+        z-index: 70;
         width: 300px;
         padding: 12px 14px;
         background: rgba(0, 0, 0, 0.82);
