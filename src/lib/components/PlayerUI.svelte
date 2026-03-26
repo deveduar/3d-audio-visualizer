@@ -167,8 +167,8 @@
         left: 0;
         right: 0;
         padding: 0;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
-        color: white;
+        background: linear-gradient(transparent, color-mix(in srgb, var(--ui-bg) 92%, #000 8%));
+        color: var(--ui-text);
         font-family: 'Courier New', monospace;
         z-index: 100;
     }
@@ -187,7 +187,7 @@
         appearance: none;
         width: 100%;
         height: 4px;
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--ui-track-bg);
         border-radius: 2px;
         cursor: pointer;
     }
@@ -197,7 +197,7 @@
         appearance: none;
         width: 12px;
         height: 12px;
-        background: white;
+        background: var(--ui-accent);
         border-radius: 50%;
         cursor: pointer;
     }
@@ -244,7 +244,7 @@
     .nav-btn {
         background: none;
         border: none;
-        color: white;
+        color: var(--ui-text);
         font-size: 11px;
         letter-spacing: 0.16em;
         cursor: pointer;
@@ -263,8 +263,8 @@
     }
 
     .play-btn {
-        background: white;
-        color: black;
+        background: var(--ui-accent);
+        color: var(--ui-bg);
         border: none;
         width: 52px;
         height: 44px;
@@ -281,7 +281,7 @@
     .mode-btn {
         background: none;
         border: none;
-        color: white;
+        color: var(--ui-text);
         font-size: 11px;
         letter-spacing: 0.16em;
         cursor: pointer;
@@ -313,14 +313,14 @@
         width: 80px;
         height: 4px;
         appearance: none;
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--ui-track-bg);
     }
 
     .volume-control input[type='range']::-webkit-slider-thumb {
         appearance: none;
         width: 10px;
         height: 10px;
-        background: white;
+        background: var(--ui-accent);
         border-radius: 50%;
     }
 </style>

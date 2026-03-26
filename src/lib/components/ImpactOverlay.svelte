@@ -60,7 +60,7 @@
 {#if $params.showImpactOverlay}
     <div
         class="impact-overlay"
-        style={`--impact:${impact}; --flash:${flash}; --frame:${framePulse}; --line-offset:${lineOffset}px; --burst-alpha:${$params.cameraEnablePan ? 0 : 1};`}
+        style={`--impact:${impact}; --flash:${flash}; --frame:${framePulse}; --line-offset:${lineOffset}px; --burst-alpha:${$params.cameraEnablePan ? 0 : 1}; --overlay-primary:${$params.primaryColor}; --overlay-secondary:${$params.secondaryColor};`}
     >
         <div class="impact-burst"></div>
         {#if $params.showOverlayLines}
@@ -88,8 +88,8 @@
     .impact-burst {
         opacity: calc(var(--flash) * 0.65 * var(--burst-alpha));
         background:
-            radial-gradient(circle at 50% 50%, rgba(255,255,255,0.32), transparent 22%),
-            radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12), transparent 48%);
+            radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--overlay-primary) 32%, transparent), transparent 22%),
+            radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--overlay-secondary) 12%, transparent), transparent 48%);
         transform: scale(calc(1 + var(--impact) * 0.35));
         mix-blend-mode: screen;
     }
@@ -99,8 +99,8 @@
         background:
             repeating-linear-gradient(
                 180deg,
-                rgba(255,255,255,0.1) 0px,
-                rgba(255,255,255,0.1) 1px,
+                color-mix(in srgb, var(--overlay-primary) 22%, transparent) 0px,
+                color-mix(in srgb, var(--overlay-primary) 22%, transparent) 1px,
                 transparent 1px,
                 transparent calc(10px - var(--frame) * 2px)
             );

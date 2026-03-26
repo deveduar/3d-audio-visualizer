@@ -1,6 +1,6 @@
 <script lang="ts">
     import { T, useTask } from '@threlte/core';
-    import { ShaderMaterial, DoubleSide } from 'three';
+    import { ShaderMaterial, DoubleSide, Color } from 'three';
     import { get } from 'svelte/store';
     import { rms, bass, transient, treble, currentIndex } from '$lib/stores/playlistStore';
     import { params } from '$lib/stores/params';
@@ -110,6 +110,8 @@
         uniform float uBloomStrength;
         uniform float uBloomRadius;
         uniform float uBloomThreshold;
+        uniform vec3 uPrimaryColor;
+        uniform vec3 uSecondaryColor;
 
         varying float vDisplacement;
 
@@ -121,8 +123,10 @@
             float bloom = glow * (0.4 + uBloomStrength);
             float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25) + uTransient * 0.35;
             float alpha = clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
+            vec3 baseColor = mix(uSecondaryColor, uPrimaryColor, clamp(glow + uTreble * 0.65 + uTransient * 0.45, 0.0, 1.0));
+            vec3 finalColor = baseColor * brightness;
 
-            gl_FragColor = vec4(vec3(brightness), alpha);
+            gl_FragColor = vec4(finalColor, alpha);
         }
     `;
 
@@ -143,7 +147,9 @@
             uOpacity: { value: 1.0 },
             uBloomStrength: { value: 0.5 },
             uBloomRadius: { value: 0.5 },
-            uBloomThreshold: { value: 0.2 }
+            uBloomThreshold: { value: 0.2 },
+            uPrimaryColor: { value: new Color('#ffffff') },
+            uSecondaryColor: { value: new Color('#9f9f9f') }
         }
     });
 
@@ -171,6 +177,8 @@
         material.uniforms.uBloomStrength.value = p.postEnabled ? p.bloomStrength : 0;
         material.uniforms.uBloomRadius.value = p.postEnabled ? p.bloomRadius : 0;
         material.uniforms.uBloomThreshold.value = p.postEnabled ? p.bloomThreshold : 0;
+        material.uniforms.uPrimaryColor.value.set(p.primaryColor);
+        material.uniforms.uSecondaryColor.value.set(p.secondaryColor);
         material.wireframe = p.renderMode === 'wireframe';
     });
 </script>

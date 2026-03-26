@@ -6,6 +6,8 @@ export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
 export type RenderMode = 'wireframe' | 'solid';
 export type CameraMode = 'locked' | 'orbit' | 'reactive' | 'orbit-reactive';
+export type ThemeMode = 'dark' | 'light';
+export type ThemePreset = 'mono' | 'sunset' | 'ice' | 'acid';
 
 export interface VisualParams {
     displayMode: DisplayMode;
@@ -18,6 +20,11 @@ export interface VisualParams {
     cameraDamping: number;
     cameraEnableZoom: boolean;
     cameraEnablePan: boolean;
+    themeMode: ThemeMode;
+    themePreset: ThemePreset;
+    primaryColor: string;
+    secondaryColor: string;
+    backgroundColor: string;
     noiseSpeed: number;
     noiseAmp: number;
     noiseFreq: number;
@@ -38,6 +45,13 @@ export interface VisualParams {
 
 export type VisualPresetMap = Record<string, VisualParams>;
 
+export interface ThemePalette {
+    themeMode: ThemeMode;
+    primaryColor: string;
+    secondaryColor: string;
+    backgroundColor: string;
+}
+
 export const defaultVisualParams: VisualParams = {
     displayMode: 'sphere',
     geometryType: 'icosahedron',
@@ -49,6 +63,11 @@ export const defaultVisualParams: VisualParams = {
     cameraDamping: 0.1,
     cameraEnableZoom: false,
     cameraEnablePan: false,
+    themeMode: 'dark',
+    themePreset: 'mono',
+    primaryColor: '#ffffff',
+    secondaryColor: '#9f9f9f',
+    backgroundColor: '#000000',
     noiseSpeed: 0.6,
     noiseAmp: 15,
     noiseFreq: 0.1,
@@ -87,6 +106,33 @@ const DEFAULT_PRESETS: VisualPresetMap = {
 
 const STORAGE_KEY = 'visualizer-presets';
 
+export const THEME_PRESETS: Record<ThemePreset, ThemePalette> = {
+    mono: {
+        themeMode: 'dark',
+        primaryColor: '#ffffff',
+        secondaryColor: '#9f9f9f',
+        backgroundColor: '#000000'
+    },
+    sunset: {
+        themeMode: 'dark',
+        primaryColor: '#ff8a3d',
+        secondaryColor: '#ff4d6d',
+        backgroundColor: '#12040d'
+    },
+    ice: {
+        themeMode: 'dark',
+        primaryColor: '#aef4ff',
+        secondaryColor: '#55a7ff',
+        backgroundColor: '#03111c'
+    },
+    acid: {
+        themeMode: 'dark',
+        primaryColor: '#d7ff3f',
+        secondaryColor: '#00f5b0',
+        backgroundColor: '#020805'
+    }
+};
+
 function isDisplayMode(value: unknown): value is DisplayMode {
     return value === 'sphere' || value === 'waveform';
 }
@@ -107,6 +153,14 @@ function isCameraMode(value: unknown): value is CameraMode {
     return value === 'locked' || value === 'orbit' || value === 'reactive' || value === 'orbit-reactive';
 }
 
+function isThemeMode(value: unknown): value is ThemeMode {
+    return value === 'dark' || value === 'light';
+}
+
+function isThemePreset(value: unknown): value is ThemePreset {
+    return value === 'mono' || value === 'sunset' || value === 'ice' || value === 'acid';
+}
+
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
@@ -124,6 +178,11 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
             typeof value?.cameraEnableZoom === 'boolean' ? value.cameraEnableZoom : defaultVisualParams.cameraEnableZoom,
         cameraEnablePan:
             typeof value?.cameraEnablePan === 'boolean' ? value.cameraEnablePan : defaultVisualParams.cameraEnablePan,
+        themeMode: isThemeMode(value?.themeMode) ? value.themeMode : defaultVisualParams.themeMode,
+        themePreset: isThemePreset(value?.themePreset) ? value.themePreset : defaultVisualParams.themePreset,
+        primaryColor: typeof value?.primaryColor === 'string' ? value.primaryColor : defaultVisualParams.primaryColor,
+        secondaryColor: typeof value?.secondaryColor === 'string' ? value.secondaryColor : defaultVisualParams.secondaryColor,
+        backgroundColor: typeof value?.backgroundColor === 'string' ? value.backgroundColor : defaultVisualParams.backgroundColor,
         noiseSpeed: typeof value?.noiseSpeed === 'number' ? value.noiseSpeed : defaultVisualParams.noiseSpeed,
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
         noiseFreq: typeof value?.noiseFreq === 'number' ? value.noiseFreq : defaultVisualParams.noiseFreq,
@@ -220,6 +279,10 @@ export function deletePreset(name: string): string[] {
 
 export function resetParams(): void {
     params.set({ ...defaultVisualParams });
+}
+
+export function getThemePalette(preset: ThemePreset): ThemePalette {
+    return THEME_PRESETS[preset];
 }
 
 export function resetCameraView(): void {

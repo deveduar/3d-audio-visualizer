@@ -36,9 +36,12 @@
         const height = canvas.height;
         const centerY = height / 2;
         const points = $waveformData ?? new Float32Array(0);
+        const primary = $params.primaryColor;
+        const secondary = $params.secondaryColor;
+        const bg = $params.backgroundColor;
 
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.fillStyle = `${bg}55`;
         ctx.fillRect(0, 0, width, height);
         ctx.save();
 
@@ -51,11 +54,11 @@
             const lineWidth = compact ? 1.5 : 1.5 + bloomRadius * 3;
             const alpha = 0.5 + $params.wireframeOpacity * 0.45 + $transient * 0.12;
 
-            ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-            ctx.fillStyle = `rgba(255,255,255,${0.2 + bloomStrength * 0.18})`;
+            ctx.strokeStyle = `${primary}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+            ctx.fillStyle = `${secondary}${Math.round((0.2 + bloomStrength * 0.18) * 255).toString(16).padStart(2, '0')}`;
             ctx.lineWidth = lineWidth;
             ctx.shadowBlur = bloomStrength * 24 + $transient * 18;
-            ctx.shadowColor = 'rgba(255,255,255,0.9)';
+            ctx.shadowColor = primary;
 
             if (style === 'bars') {
                 const step = Math.max(3, Math.floor(points.length / 96));
@@ -105,7 +108,7 @@
             ctx.beginPath();
             ctx.moveTo(0, centerY);
             ctx.lineTo(width, centerY + amplitude);
-            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.strokeStyle = `${secondary}66`;
             ctx.lineWidth = 1;
             ctx.stroke();
         }
@@ -116,7 +119,10 @@
     }
 </script>
 
-<div class={compact ? 'compact-waveform' : 'waveform-container'}>
+<div
+    class={compact ? 'compact-waveform' : 'waveform-container'}
+    style={`--wave-bg:${$params.backgroundColor}; --wave-primary:${$params.primaryColor}; --wave-secondary:${$params.secondaryColor};`}
+>
     <canvas bind:this={canvas}></canvas>
 </div>
 
@@ -125,15 +131,15 @@
         position: absolute;
         inset: 0;
         background:
-            radial-gradient(circle at center, rgba(255, 255, 255, 0.06), transparent 50%),
-            linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.82));
+            radial-gradient(circle at center, color-mix(in srgb, var(--wave-primary) 10%, transparent), transparent 50%),
+            linear-gradient(180deg, color-mix(in srgb, var(--wave-secondary) 8%, transparent), color-mix(in srgb, var(--wave-bg) 84%, #000 16%));
         pointer-events: none;
     }
 
     .compact-waveform {
         width: 100%;
         height: 60px;
-        background: rgba(0, 0, 0, 0.5);
+        background: color-mix(in srgb, var(--wave-bg) 76%, transparent);
     }
 
     canvas {

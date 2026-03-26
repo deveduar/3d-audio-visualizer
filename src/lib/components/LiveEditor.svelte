@@ -7,6 +7,8 @@
         type CameraMode,
         type GeometryType,
         type RenderMode,
+        type ThemeMode,
+        type ThemePreset,
         type WaveformStyle,
         resetCameraView,
         defaultVisualParams,
@@ -16,7 +18,8 @@
         deletePreset,
         exportPresets,
         importPresets,
-        resetParams
+        resetParams,
+        getThemePalette
     } from '$lib/stores/params';
     import { bass, dbLevel, lufs, mid, transient, treble } from '$lib/stores/playlistStore';
 
@@ -47,6 +50,11 @@
         cameraDamping: 0.1,
         cameraEnableZoom: false,
         cameraEnablePan: false,
+        themeMode: 'dark' as ThemeMode,
+        themePreset: 'mono' as ThemePreset,
+        primaryColor: '#ffffff',
+        secondaryColor: '#9f9f9f',
+        backgroundColor: '#000000',
         noiseFreq: 0.1,
         noiseAmp: 15,
         noiseSpeed: 0.6,
@@ -85,6 +93,15 @@
 
     function refreshPane() {
         pane?.refresh();
+    }
+
+    function applyThemePreset(preset: ThemePreset) {
+        const palette = getThemePalette(preset);
+        localParams.themePreset = preset;
+        localParams.themeMode = palette.themeMode;
+        localParams.primaryColor = palette.primaryColor;
+        localParams.secondaryColor = palette.secondaryColor;
+        localParams.backgroundColor = palette.backgroundColor;
     }
 
     function rebuildPane() {
@@ -143,6 +160,50 @@
                 })
                 .on('change', syncToStore);
         }
+
+        const settingsFolder = editorPane.addFolder({ title: 'SETTINGS' });
+        settingsFolder
+            .addBinding(localParams, 'themePreset', {
+                label: 'theme',
+                options: {
+                    Mono: 'mono',
+                    Sunset: 'sunset',
+                    Ice: 'ice',
+                    Acid: 'acid'
+                }
+            })
+            .on('change', (event) => {
+                applyThemePreset(event.value as ThemePreset);
+                syncToStore();
+                refreshPane();
+            });
+        settingsFolder
+            .addBinding(localParams, 'themeMode', {
+                label: 'mode',
+                options: {
+                    Dark: 'dark',
+                    Light: 'light'
+                }
+            })
+            .on('change', syncToStore);
+        settingsFolder
+            .addBinding(localParams, 'primaryColor', {
+                label: 'primary',
+                view: 'color'
+            })
+            .on('change', syncToStore);
+        settingsFolder
+            .addBinding(localParams, 'secondaryColor', {
+                label: 'secondary',
+                view: 'color'
+            })
+            .on('change', syncToStore);
+        settingsFolder
+            .addBinding(localParams, 'backgroundColor', {
+                label: 'background',
+                view: 'color'
+            })
+            .on('change', syncToStore);
 
         const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
         geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
@@ -323,6 +384,11 @@
             localParams.cameraDamping = p.cameraDamping;
             localParams.cameraEnableZoom = p.cameraEnableZoom;
             localParams.cameraEnablePan = p.cameraEnablePan;
+            localParams.themeMode = p.themeMode;
+            localParams.themePreset = p.themePreset;
+            localParams.primaryColor = p.primaryColor;
+            localParams.secondaryColor = p.secondaryColor;
+            localParams.backgroundColor = p.backgroundColor;
             localParams.noiseFreq = p.noiseFreq;
             localParams.noiseAmp = p.noiseAmp;
             localParams.noiseSpeed = p.noiseSpeed;
@@ -442,8 +508,20 @@
         width: 300px !important;
         max-height: calc(100vh - 40px);
         overflow-y: auto;
+        background: var(--ui-panel-bg) !important;
+        border: 1px solid var(--ui-panel-border);
+        color: var(--ui-text) !important;
         scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.28) rgba(255,255,255,0.06);
+        scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
+    }
+
+    :global(.tp-rotv),
+    :global(.tp-fldv),
+    :global(.tp-lstv),
+    :global(.tp-txtv),
+    :global(.tp-btnv),
+    :global(.tp-tabv) {
+        background: transparent !important;
     }
 
     :global(.tp-dfwv::-webkit-scrollbar) {
@@ -451,13 +529,13 @@
     }
 
     :global(.tp-dfwv::-webkit-scrollbar-track) {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--ui-scroll-track);
     }
 
     :global(.tp-dfwv::-webkit-scrollbar-thumb) {
-        background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.14));
+        background: linear-gradient(180deg, var(--ui-scroll-thumb), var(--ui-scroll-thumb-soft));
         border-radius: 999px;
-        border: 2px solid rgba(0, 0, 0, 0.2);
+        border: 2px solid transparent;
     }
 
     :global(.tp-lblv_l),
@@ -465,6 +543,7 @@
     :global(.tp-fldv_t),
     :global(.tp-btnv_t) {
         font-family: 'Courier New', monospace !important;
+        color: var(--ui-text) !important;
     }
 
     .meters-panel {
@@ -474,10 +553,10 @@
         z-index: 70;
         width: 300px;
         padding: 12px 14px;
-        background: rgba(0, 0, 0, 0.82);
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: var(--ui-panel-bg);
+        border: 1px solid var(--ui-panel-border);
         backdrop-filter: blur(12px);
-        color: #fff;
+        color: var(--ui-text);
         font-family: 'Courier New', monospace;
     }
 
@@ -505,14 +584,14 @@
     .meter-bar {
         position: relative;
         height: 8px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: var(--ui-track-bg);
+        border: 1px solid var(--ui-panel-border);
         overflow: hidden;
     }
 
     .meter-fill {
         height: 100%;
-        background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.45) 100%);
+        background: linear-gradient(90deg, var(--ui-accent) 0%, var(--ui-accent-soft) 100%);
     }
 
     .band-panel {
@@ -522,10 +601,10 @@
         z-index: 70;
         width: 300px;
         padding: 12px 14px;
-        background: rgba(0, 0, 0, 0.82);
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: var(--ui-panel-bg);
+        border: 1px solid var(--ui-panel-border);
         backdrop-filter: blur(12px);
-        color: #fff;
+        color: var(--ui-text);
         font-family: 'Courier New', monospace;
     }
 
@@ -553,17 +632,17 @@
     .band-bar {
         position: relative;
         height: 8px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: var(--ui-track-bg);
+        border: 1px solid var(--ui-panel-border);
         overflow: hidden;
     }
 
     .band-fill {
         height: 100%;
-        background: linear-gradient(90deg, rgba(255,255,255,0.5) 0%, #fff 100%);
+        background: linear-gradient(90deg, var(--ui-accent-soft) 0%, var(--ui-accent) 100%);
     }
 
     .transient-fill {
-        background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, #fff 100%);
+        background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent-soft) 35%, transparent) 0%, var(--ui-accent) 100%);
     }
 </style>

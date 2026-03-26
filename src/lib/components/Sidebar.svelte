@@ -135,11 +135,11 @@
         top: 0;
         bottom: 0;
         width: 280px;
-        background: rgba(0, 0, 0, 0.85);
+        background: var(--ui-panel-bg);
         backdrop-filter: blur(10px);
         z-index: 80;
         transition: transform 0.3s ease;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: 1px solid var(--ui-panel-border);
     }
 
     .sidebar.collapsed {
@@ -153,9 +153,9 @@
         transform: translateY(-50%) rotate(-90deg);
         width: 96px;
         height: 28px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: white;
+        background: var(--ui-panel-bg);
+        border: 1px solid var(--ui-panel-border);
+        color: var(--ui-text);
         cursor: pointer;
         font-size: 10px;
         letter-spacing: 0.2em;
@@ -165,12 +165,13 @@
         padding: 20px;
         height: 100%;
         max-height: calc(100vh - 40px);
-        padding-bottom: 160px;
+        padding-bottom: 220px;
+        scroll-padding-bottom: 220px;
         overflow-y: auto;
-        color: white;
+        color: var(--ui-text);
         font-family: 'Courier New', monospace;
         scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.28) rgba(255,255,255,0.06);
+        scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
     }
 
     .content::-webkit-scrollbar {
@@ -178,13 +179,13 @@
     }
 
     .content::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--ui-scroll-track);
     }
 
     .content::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.14));
+        background: linear-gradient(180deg, var(--ui-scroll-thumb), var(--ui-scroll-thumb-soft));
         border-radius: 999px;
-        border: 2px solid rgba(0, 0, 0, 0.2);
+        border: 2px solid transparent;
     }
 
     h2 {
@@ -195,7 +196,7 @@
     }
 
     .dropzone {
-        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border: 2px dashed var(--ui-panel-border);
         padding: 20px;
         text-align: center;
         margin-bottom: 20px;
@@ -203,8 +204,8 @@
     }
 
     .dropzone.dragover {
-        border-color: white;
-        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--ui-accent);
+        background: color-mix(in srgb, var(--ui-accent) 12%, transparent);
     }
 
     .drop-label {
@@ -229,14 +230,15 @@
         margin-bottom: 4px;
         border: 1px solid transparent;
         transition: border-color 0.2s, background 0.2s, opacity 0.2s;
+        overflow: hidden;
     }
 
     .track-item.active {
-        border-color: white;
+        border-color: var(--ui-accent);
     }
 
     .track-item.playing {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--ui-track-bg);
     }
 
     .track-item.dragging {
@@ -251,19 +253,20 @@
         gap: 10px;
         background: none;
         border: none;
-        color: white;
+        color: var(--ui-text);
         padding: 8px;
         cursor: pointer;
         text-align: left;
         font-family: inherit;
+        overflow: hidden;
     }
 
     .track-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: color-mix(in srgb, var(--ui-accent) 12%, transparent);
     }
 
     .playing-indicator {
-        width: 36px;
+        width: 32px;
         font-size: 10px;
         opacity: 0.7;
         flex-shrink: 0;
@@ -281,13 +284,14 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 140px;
     }
 
     .remove-btn {
         flex-shrink: 0;
         background: none;
         border: none;
-        color: white;
+        color: var(--ui-text);
         opacity: 0.3;
         cursor: pointer;
         font-size: 14px;
