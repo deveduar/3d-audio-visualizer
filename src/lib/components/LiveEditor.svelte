@@ -4,6 +4,7 @@
     import {
         params,
         type DisplayMode,
+        type CameraMode,
         type GeometryType,
         type RenderMode,
         type WaveformStyle,
@@ -39,6 +40,12 @@
         geometryType: 'icosahedron' as GeometryType,
         renderMode: 'wireframe' as RenderMode,
         waveformStyle: 'line' as WaveformStyle,
+        cameraMode: 'orbit-reactive' as CameraMode,
+        cameraDistance: 80,
+        cameraReactiveAmount: 0.7,
+        cameraDamping: 0.1,
+        cameraEnableZoom: false,
+        cameraEnablePan: false,
         noiseFreq: 0.1,
         noiseAmp: 15,
         noiseSpeed: 0.6,
@@ -143,6 +150,34 @@
 
         geomFolder
             .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
+            .on('change', syncToStore);
+
+        const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
+        cameraFolder
+            .addBinding(localParams, 'cameraMode', {
+                label: 'mode',
+                options: {
+                    Locked: 'locked',
+                    Orbit: 'orbit',
+                    Reactive: 'reactive',
+                    'Orbit+React': 'orbit-reactive'
+                }
+            })
+            .on('change', syncToStore);
+        cameraFolder
+            .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 140, step: 1 })
+            .on('change', syncToStore);
+        cameraFolder
+            .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 1.5, step: 0.05 })
+            .on('change', syncToStore);
+        cameraFolder
+            .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.25, step: 0.01 })
+            .on('change', syncToStore);
+        cameraFolder
+            .addBinding(localParams, 'cameraEnableZoom', { label: 'zoom' })
+            .on('change', syncToStore);
+        cameraFolder
+            .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
             .on('change', syncToStore);
 
         const audioFolder = editorPane.addFolder({ title: 'AUDIO' });
@@ -252,6 +287,12 @@
             localParams.geometryType = p.geometryType;
             localParams.renderMode = p.renderMode;
             localParams.waveformStyle = p.waveformStyle;
+            localParams.cameraMode = p.cameraMode;
+            localParams.cameraDistance = p.cameraDistance;
+            localParams.cameraReactiveAmount = p.cameraReactiveAmount;
+            localParams.cameraDamping = p.cameraDamping;
+            localParams.cameraEnableZoom = p.cameraEnableZoom;
+            localParams.cameraEnablePan = p.cameraEnablePan;
             localParams.noiseFreq = p.noiseFreq;
             localParams.noiseAmp = p.noiseAmp;
             localParams.noiseSpeed = p.noiseSpeed;

@@ -5,12 +5,19 @@ export type DisplayMode = 'sphere' | 'waveform';
 export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
 export type RenderMode = 'wireframe' | 'solid';
+export type CameraMode = 'locked' | 'orbit' | 'reactive' | 'orbit-reactive';
 
 export interface VisualParams {
     displayMode: DisplayMode;
     geometryType: GeometryType;
     renderMode: RenderMode;
     waveformStyle: WaveformStyle;
+    cameraMode: CameraMode;
+    cameraDistance: number;
+    cameraReactiveAmount: number;
+    cameraDamping: number;
+    cameraEnableZoom: boolean;
+    cameraEnablePan: boolean;
     noiseSpeed: number;
     noiseAmp: number;
     noiseFreq: number;
@@ -33,6 +40,12 @@ export const defaultVisualParams: VisualParams = {
     geometryType: 'icosahedron',
     renderMode: 'wireframe',
     waveformStyle: 'line',
+    cameraMode: 'orbit-reactive',
+    cameraDistance: 80,
+    cameraReactiveAmount: 0.7,
+    cameraDamping: 0.1,
+    cameraEnableZoom: false,
+    cameraEnablePan: false,
     noiseSpeed: 0.6,
     noiseAmp: 15,
     noiseFreq: 0.1,
@@ -84,12 +97,27 @@ function isRenderMode(value: unknown): value is RenderMode {
     return value === 'wireframe' || value === 'solid';
 }
 
+function isCameraMode(value: unknown): value is CameraMode {
+    return value === 'locked' || value === 'orbit' || value === 'reactive' || value === 'orbit-reactive';
+}
+
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
         geometryType: isGeometryType(value?.geometryType) ? value.geometryType : defaultVisualParams.geometryType,
         renderMode: isRenderMode(value?.renderMode) ? value.renderMode : defaultVisualParams.renderMode,
         waveformStyle: isWaveformStyle(value?.waveformStyle) ? value.waveformStyle : defaultVisualParams.waveformStyle,
+        cameraMode: isCameraMode(value?.cameraMode) ? value.cameraMode : defaultVisualParams.cameraMode,
+        cameraDistance: typeof value?.cameraDistance === 'number' ? value.cameraDistance : defaultVisualParams.cameraDistance,
+        cameraReactiveAmount:
+            typeof value?.cameraReactiveAmount === 'number'
+                ? value.cameraReactiveAmount
+                : defaultVisualParams.cameraReactiveAmount,
+        cameraDamping: typeof value?.cameraDamping === 'number' ? value.cameraDamping : defaultVisualParams.cameraDamping,
+        cameraEnableZoom:
+            typeof value?.cameraEnableZoom === 'boolean' ? value.cameraEnableZoom : defaultVisualParams.cameraEnableZoom,
+        cameraEnablePan:
+            typeof value?.cameraEnablePan === 'boolean' ? value.cameraEnablePan : defaultVisualParams.cameraEnablePan,
         noiseSpeed: typeof value?.noiseSpeed === 'number' ? value.noiseSpeed : defaultVisualParams.noiseSpeed,
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
         noiseFreq: typeof value?.noiseFreq === 'number' ? value.noiseFreq : defaultVisualParams.noiseFreq,
