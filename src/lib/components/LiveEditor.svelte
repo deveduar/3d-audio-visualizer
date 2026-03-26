@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { Pane, type FolderApi } from 'tweakpane';
+    import { Pane, type FolderApi, type TpChangeEvent } from 'tweakpane';
     import {
         params,
         type DisplayMode,
@@ -172,7 +172,7 @@
                     Acid: 'acid'
                 }
             })
-            .on('change', (event) => {
+            .on('change', (event: TpChangeEvent<ThemePreset>) => {
                 applyThemePreset(event.value as ThemePreset);
                 syncToStore();
                 refreshPane();

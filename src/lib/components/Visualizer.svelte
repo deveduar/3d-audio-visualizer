@@ -81,9 +81,7 @@
     .visualizer {
         width: 100vw;
         height: 100vh;
-        background:
-            radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ui-accent) 14%, transparent), transparent 48%),
-            linear-gradient(180deg, color-mix(in srgb, var(--ui-bg) 92%, #000 8%), var(--ui-bg));
+        background: linear-gradient(180deg, color-mix(in srgb, var(--ui-bg) 92%, #000 8%), var(--ui-bg));
         overflow: hidden;
         position: relative;
         color: var(--ui-text);

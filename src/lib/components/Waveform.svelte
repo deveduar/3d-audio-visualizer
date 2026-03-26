@@ -130,9 +130,7 @@
     .waveform-container {
         position: absolute;
         inset: 0;
-        background:
-            radial-gradient(circle at center, color-mix(in srgb, var(--wave-primary) 10%, transparent), transparent 50%),
-            linear-gradient(180deg, color-mix(in srgb, var(--wave-secondary) 8%, transparent), color-mix(in srgb, var(--wave-bg) 84%, #000 16%));
+        background: linear-gradient(180deg, color-mix(in srgb, var(--wave-secondary) 6%, transparent), color-mix(in srgb, var(--wave-bg) 84%, #000 16%));
         pointer-events: none;
     }
 
