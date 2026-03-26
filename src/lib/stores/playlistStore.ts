@@ -24,6 +24,7 @@ export const lufs = writable(-60);
 export const waveformData = writable<Float32Array | null>(null);
 export const autoPlay = writable(true);
 export const repeat = writable(false);
+export const sidebarOpen = writable(false);
 
 export const currentTrack = derived(
     [tracks, currentIndex],
@@ -164,4 +165,5 @@ export function cleanup(): void {
     dbLevel.set(-60);
     lufs.set(-60);
     waveformData.set(null);
+    sidebarOpen.set(false);
 }

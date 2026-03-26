@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tracks, currentIndex, isPlaying, removeTrack, addTracks, moveTrack } from '$lib/stores/playlistStore';
+    import { tracks, currentIndex, isPlaying, removeTrack, addTracks, moveTrack, sidebarOpen } from '$lib/stores/playlistStore';
     import { playTrackAt } from '$lib/stores/audioEngine';
 
     let collapsed = $state(true);
@@ -57,73 +57,97 @@
     function handleTrackDragEnd() {
         draggedIndex = null;
     }
+
+    function toggleSidebar() {
+        collapsed = !collapsed;
+        sidebarOpen.set(!collapsed);
+    }
 </script>
 
 <aside class="sidebar" class:collapsed>
-    <button class="toggle" onclick={() => (collapsed = !collapsed)}>
+    <button class="toggle" onclick={toggleSidebar}>
         {collapsed ? 'OPEN' : 'CLOSE'}
     </button>
 
     {#if !collapsed}
         <div class="content">
-            <h2>PLAYLIST</h2>
+            <header class="sidebar-header">
+                <div class="title-row">
+                    <h2>PLAYLIST</h2>
+                    <span class="track-count">{$tracks.length} TRACKS</span>
+                </div>
 
-            <div
-                class="dropzone"
-                class:dragover={dragOver}
-                ondrop={handleDrop}
-                ondragover={handleDragOver}
-                ondragleave={handleDragLeave}
-                role="button"
-                tabindex="0"
-            >
-                <label for="file-input" class="drop-label">
-                    DROP AUDIO OR CLICK
-                </label>
-                <input
-                    type="file"
-                    id="file-input"
-                    accept=".mp3,.wav,.ogg,.flac,.m4a,.aac"
-                    multiple
-                    onchange={handleFileInput}
-                />
-            </div>
+                <div
+                    class="dropzone"
+                    class:dragover={dragOver}
+                    ondrop={handleDrop}
+                    ondragover={handleDragOver}
+                    ondragleave={handleDragLeave}
+                    role="button"
+                    tabindex="0"
+                >
+                    <label for="file-input" class="drop-label">
+                        DROP AUDIO OR CLICK
+                    </label>
+                    <input
+                        type="file"
+                        id="file-input"
+                        accept=".mp3,.wav,.ogg,.flac,.m4a,.aac"
+                        multiple
+                        onchange={handleFileInput}
+                    />
+                </div>
+            </header>
 
-            <ul class="track-list">
-                {#each $tracks as track, index (track.id)}
-                    <li
-                        class="track-item"
-                        class:active={index === $currentIndex}
-                        class:playing={index === $currentIndex && $isPlaying}
-                        class:dragging={index === draggedIndex}
-                        draggable="true"
-                        ondragstart={() => handleTrackDragStart(index)}
-                        ondragover={handleTrackItemDragOver}
-                        ondrop={() => handleTrackDrop(index)}
-                        ondragend={handleTrackDragEnd}
-                    >
-                        <button class="track-btn" onclick={() => handleTrackSelect(index)}>
-                            <span class="playing-indicator">
-                                {#if index === $currentIndex && $isPlaying}
-                                    LIVE
-                                {:else if index === $currentIndex}
-                                    PLAY
-                                {:else}
-                                    {index + 1}
-                                {/if}
-                            </span>
-                            <span class="track-name">{track.name}</span>
-                        </button>
-                        <button class="remove-btn" onclick={() => removeTrack(track.id)} aria-label="Remove track">
-                            X
-                        </button>
-                    </li>
-                {/each}
-            </ul>
+            <main class="sidebar-main">
+                <div class="track-scroll">
+                    <ul class="track-list">
+                        {#each $tracks as track, index (track.id)}
+                            <li
+                                class="track-item"
+                                class:active={index === $currentIndex}
+                                class:playing={index === $currentIndex && $isPlaying}
+                                class:dragging={index === draggedIndex}
+                                draggable="true"
+                                ondragstart={() => handleTrackDragStart(index)}
+                                ondragover={handleTrackItemDragOver}
+                                ondrop={() => handleTrackDrop(index)}
+                                ondragend={handleTrackDragEnd}
+                            >
+                                <button class="track-btn" onclick={() => handleTrackSelect(index)}>
+                                    <span class="playing-indicator">
+                                        {#if index === $currentIndex && $isPlaying}
+                                            LIVE
+                                        {:else if index === $currentIndex}
+                                            PLAY
+                                        {:else}
+                                            {index + 1}
+                                        {/if}
+                                    </span>
+                                    <span class="track-name">{track.name}</span>
+                                </button>
+                                <button class="remove-btn" onclick={() => removeTrack(track.id)} aria-label="Remove track">
+                                    X
+                                </button>
+                            </li>
+                        {/each}
+                    </ul>
 
-            {#if $tracks.length === 0}
-                <p class="empty">No tracks loaded</p>
-            {/if}
+                    {#if $tracks.length === 0}
+                        <p class="empty">No tracks loaded</p>
+                    {/if}
+                </div>
+            </main>
+
+            <footer class="sidebar-footer">
+                <details class="info-panel">
+                    <summary>INFO</summary>
+                    <p>Load audio, reorder tracks by drag and drop, click any track to play it, and use the live editor to shape the visual response in real time.</p>
+                </details>
+                <a class="github-link" href="https://github.com/deveduar" target="_blank" rel="noreferrer">
+                    DEVELOPED BY DEVEDUAR
+                </a>
+            </footer>
         </div>
     {/if}
 </aside>
@@ -162,35 +186,35 @@
     }
 
     .content {
-        padding: 20px;
+        display: flex;
+        flex-direction: column;
         height: 100%;
-        max-height: calc(100vh - 40px);
-        padding-bottom: 220px;
-        scroll-padding-bottom: 220px;
-        overflow-y: auto;
+        padding: 20px 20px 18px;
         color: var(--ui-text);
         font-family: 'Courier New', monospace;
-        scrollbar-width: thin;
-        scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
     }
 
-    .content::-webkit-scrollbar {
-        width: 10px;
+    .sidebar-header {
+        flex-shrink: 0;
     }
 
-    .content::-webkit-scrollbar-track {
-        background: var(--ui-scroll-track);
+    .title-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
     }
 
-    .content::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, var(--ui-scroll-thumb), var(--ui-scroll-thumb-soft));
-        border-radius: 999px;
-        border: 2px solid transparent;
+    .track-count {
+        font-size: 10px;
+        opacity: 0.55;
+        letter-spacing: 0.12em;
     }
 
     h2 {
         font-size: 14px;
-        margin: 0 0 20px 0;
+        margin: 0;
         letter-spacing: 2px;
         opacity: 0.7;
     }
@@ -206,6 +230,34 @@
     .dropzone.dragover {
         border-color: var(--ui-accent);
         background: color-mix(in srgb, var(--ui-accent) 12%, transparent);
+    }
+
+    .sidebar-main {
+        min-height: 0;
+        flex: 1;
+        padding: 4px 0 12px;
+    }
+
+    .track-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding-right: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
+    }
+
+    .track-scroll::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .track-scroll::-webkit-scrollbar-track {
+        background: var(--ui-scroll-track);
+    }
+
+    .track-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--ui-scroll-thumb), var(--ui-scroll-thumb-soft));
+        border-radius: 999px;
+        border: 2px solid transparent;
     }
 
     .drop-label {
@@ -306,5 +358,50 @@
         font-size: 12px;
         opacity: 0.5;
         text-align: center;
+        margin: 22px 0 0;
+    }
+
+    .sidebar-footer {
+        flex-shrink: 0;
+        padding-top: 14px;
+        border-top: 1px solid var(--ui-panel-border);
+        display: grid;
+        gap: 12px;
+    }
+
+    .info-panel {
+        background: color-mix(in srgb, var(--ui-bg) 70%, transparent);
+        border: 1px solid var(--ui-panel-border);
+        padding: 10px 12px;
+    }
+
+    .info-panel summary {
+        cursor: pointer;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        list-style: none;
+    }
+
+    .info-panel summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .info-panel p {
+        margin: 10px 0 0;
+        font-size: 11px;
+        line-height: 1.5;
+        opacity: 0.75;
+    }
+
+    .github-link {
+        color: var(--ui-text);
+        text-decoration: none;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        opacity: 0.65;
+    }
+
+    .github-link:hover {
+        opacity: 1;
     }
 </style>

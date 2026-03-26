@@ -21,7 +21,7 @@
         resetParams,
         getThemePalette
     } from '$lib/stores/params';
-    import { bass, dbLevel, lufs, mid, transient, treble } from '$lib/stores/playlistStore';
+    import { bass, dbLevel, lufs, mid, transient, treble, sidebarOpen } from '$lib/stores/playlistStore';
 
     type EditorPane = FolderApi & {
         refresh: () => void;
@@ -451,7 +451,7 @@
 <div class="editor-shell">
     <div class="editor" bind:this={container}></div>
     {#if localParams.showMeters}
-        <div class="meters-panel">
+        <div class="meters-panel" class:sidebar-open={$sidebarOpen}>
             <div class="meter-row">
                 <span class="meter-label">DB</span>
                 <div class="meter-bar">
@@ -469,7 +469,7 @@
         </div>
     {/if}
     {#if localParams.showBands}
-        <div class="band-panel">
+        <div class="band-panel" class:sidebar-open={$sidebarOpen}>
             <div class="band-row">
                 <span class="band-label">BASS</span>
                 <div class="band-bar"><div class="band-fill" style={`width: ${bassValue * 100}%`}></div></div>
@@ -549,7 +549,7 @@
     .meters-panel {
         position: fixed;
         top: 20px;
-        left: 316px;
+        left: 20px;
         z-index: 70;
         width: 300px;
         padding: 12px 14px;
@@ -558,6 +558,11 @@
         backdrop-filter: blur(12px);
         color: var(--ui-text);
         font-family: 'Courier New', monospace;
+        transition: left 0.3s ease;
+    }
+
+    .meters-panel.sidebar-open {
+        left: 316px;
     }
 
     .meter-row {
@@ -597,7 +602,7 @@
     .band-panel {
         position: fixed;
         top: 118px;
-        left: 316px;
+        left: 20px;
         z-index: 70;
         width: 300px;
         padding: 12px 14px;
@@ -606,6 +611,11 @@
         backdrop-filter: blur(12px);
         color: var(--ui-text);
         font-family: 'Courier New', monospace;
+        transition: left 0.3s ease;
+    }
+
+    .band-panel.sidebar-open {
+        left: 316px;
     }
 
     .band-row {

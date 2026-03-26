@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { isPlaying, currentTime, duration, volume, currentTrack, loadStaticTracks, autoPlay, repeat, tracks, currentIndex } from '$lib/stores/playlistStore';
+    import { isPlaying, currentTime, duration, volume, currentTrack, loadStaticTracks, autoPlay, repeat, tracks, currentIndex, sidebarOpen } from '$lib/stores/playlistStore';
     import { togglePlay, seek, setVolume, playTrackAt, toggleRepeatMode } from '$lib/stores/audioEngine';
     import { onMount } from 'svelte';
     import { get } from 'svelte/store';
@@ -114,7 +114,7 @@
     }
 </script>
 
-<div class="ui">
+<div class="ui" class:sidebar-open={$sidebarOpen}>
     <div class="progress-bar">
         <input
             type="range"
@@ -171,6 +171,11 @@
         color: var(--ui-text);
         font-family: 'Courier New', monospace;
         z-index: 100;
+        transition: left 0.3s ease, width 0.3s ease, right 0.3s ease;
+    }
+
+    .ui.sidebar-open {
+        left: 280px;
     }
 
     .progress-bar {
