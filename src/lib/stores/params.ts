@@ -2,11 +2,13 @@ import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 
 export type DisplayMode = 'sphere' | 'waveform';
-export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'octahedron';
+export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube';
+export type WaveformStyle = 'line' | 'bars' | 'mirror';
 
 export interface VisualParams {
     displayMode: DisplayMode;
     geometryType: GeometryType;
+    waveformStyle: WaveformStyle;
     noiseSpeed: number;
     noiseAmp: number;
     noiseFreq: number;
@@ -15,6 +17,7 @@ export interface VisualParams {
     bloomRadius: number;
     bloomThreshold: number;
     baseRadius: number;
+    showMeters: boolean;
 }
 
 export type VisualPresetMap = Record<string, VisualParams>;
@@ -22,6 +25,7 @@ export type VisualPresetMap = Record<string, VisualParams>;
 export const defaultVisualParams: VisualParams = {
     displayMode: 'sphere',
     geometryType: 'icosahedron',
+    waveformStyle: 'line',
     noiseSpeed: 0.6,
     noiseAmp: 15,
     noiseFreq: 0.1,
@@ -29,7 +33,8 @@ export const defaultVisualParams: VisualParams = {
     bloomStrength: 0.5,
     bloomRadius: 0.5,
     bloomThreshold: 0.2,
-    baseRadius: 20
+    baseRadius: 20,
+    showMeters: true
 };
 
 const DEFAULT_PRESETS: VisualPresetMap = {
@@ -44,7 +49,7 @@ const DEFAULT_PRESETS: VisualPresetMap = {
     flat_wave: {
         ...defaultVisualParams,
         displayMode: 'waveform',
-        geometryType: 'sphere',
+        waveformStyle: 'mirror',
         noiseAmp: 8,
         noiseFreq: 0.05
     }
@@ -57,13 +62,18 @@ function isDisplayMode(value: unknown): value is DisplayMode {
 }
 
 function isGeometryType(value: unknown): value is GeometryType {
-    return value === 'icosahedron' || value === 'sphere' || value === 'torus' || value === 'octahedron';
+    return value === 'icosahedron' || value === 'sphere' || value === 'torus' || value === 'cube';
+}
+
+function isWaveformStyle(value: unknown): value is WaveformStyle {
+    return value === 'line' || value === 'bars' || value === 'mirror';
 }
 
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
         geometryType: isGeometryType(value?.geometryType) ? value.geometryType : defaultVisualParams.geometryType,
+        waveformStyle: isWaveformStyle(value?.waveformStyle) ? value.waveformStyle : defaultVisualParams.waveformStyle,
         noiseSpeed: typeof value?.noiseSpeed === 'number' ? value.noiseSpeed : defaultVisualParams.noiseSpeed,
         noiseAmp: typeof value?.noiseAmp === 'number' ? value.noiseAmp : defaultVisualParams.noiseAmp,
         noiseFreq: typeof value?.noiseFreq === 'number' ? value.noiseFreq : defaultVisualParams.noiseFreq,
@@ -71,7 +81,8 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         bloomStrength: typeof value?.bloomStrength === 'number' ? value.bloomStrength : defaultVisualParams.bloomStrength,
         bloomRadius: typeof value?.bloomRadius === 'number' ? value.bloomRadius : defaultVisualParams.bloomRadius,
         bloomThreshold: typeof value?.bloomThreshold === 'number' ? value.bloomThreshold : defaultVisualParams.bloomThreshold,
-        baseRadius: typeof value?.baseRadius === 'number' ? value.baseRadius : defaultVisualParams.baseRadius
+        baseRadius: typeof value?.baseRadius === 'number' ? value.baseRadius : defaultVisualParams.baseRadius,
+        showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters
     };
 }
 

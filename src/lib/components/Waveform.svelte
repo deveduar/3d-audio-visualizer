@@ -1,6 +1,7 @@
 <script lang="ts">
     import { waveformData, isPlaying, rms } from '$lib/stores/playlistStore';
     import { onMount } from 'svelte';
+    import { params } from '$lib/stores/params';
 
     let { compact = false }: { compact?: boolean } = $props();
 
@@ -41,21 +42,61 @@
         ctx.fillRect(0, 0, width, height);
 
         if (points.length > 0) {
-            ctx.beginPath();
-            ctx.lineWidth = compact ? 1.5 : 2.5;
-            ctx.strokeStyle = 'rgba(255,255,255,0.96)';
+            const style = $params.waveformStyle;
+            const gain = 0.45 + $params.noiseAmp / 40;
+            const lineWidth = compact ? 1.5 : 1.5 + $params.bloomRadius * 3;
+            const alpha = 0.5 + $params.wireframeOpacity * 0.45;
+            const threshold = $params.bloomThreshold * 0.45;
 
-            for (let i = 0; i < points.length; i++) {
-                const x = (i / Math.max(1, points.length - 1)) * width;
-                const y = centerY + points[i] * centerY * 0.7;
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+            ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+            ctx.fillStyle = `rgba(255,255,255,${0.2 + $params.bloomStrength * 0.18})`;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = $params.bloomStrength * 24;
+            ctx.shadowColor = 'rgba(255,255,255,0.9)';
+
+            if (style === 'bars') {
+                const step = Math.max(3, Math.floor(points.length / 96));
+                const barWidth = Math.max(2, width / Math.max(24, points.length / step) - 2);
+
+                for (let i = 0; i < points.length; i += step) {
+                    const x = (i / Math.max(1, points.length - 1)) * width;
+                    const sample = Math.abs(points[i]) < threshold ? 0 : points[i];
+                    const magnitude = Math.abs(sample) * centerY * gain;
+                    ctx.fillRect(x, centerY - magnitude, barWidth, magnitude * 2);
+                }
+            } else {
+                ctx.beginPath();
+
+                for (let i = 0; i < points.length; i++) {
+                    const x = (i / Math.max(1, points.length - 1)) * width;
+                    const sample = Math.abs(points[i]) < threshold ? 0 : points[i];
+                    const y = centerY + sample * centerY * gain;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+
+                ctx.stroke();
+
+                if (style === 'mirror') {
+                    ctx.beginPath();
+                    for (let i = 0; i < points.length; i++) {
+                        const x = (i / Math.max(1, points.length - 1)) * width;
+                        const sample = Math.abs(points[i]) < threshold ? 0 : points[i];
+                        const y = centerY - sample * centerY * gain;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.stroke();
                 }
             }
 
-            ctx.stroke();
+            ctx.shadowBlur = 0;
         } else {
             const amplitude = ($isPlaying ? $rms : 0.02) * height * 0.35;
             ctx.beginPath();

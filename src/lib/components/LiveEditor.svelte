@@ -5,6 +5,7 @@
         params,
         type DisplayMode,
         type GeometryType,
+        type WaveformStyle,
         defaultVisualParams,
         getPresetNames,
         savePreset,
@@ -31,6 +32,7 @@
     const localParams = $state({
         displayMode: 'sphere' as DisplayMode,
         geometryType: 'icosahedron' as GeometryType,
+        waveformStyle: 'line' as WaveformStyle,
         noiseFreq: 0.1,
         noiseAmp: 15,
         noiseSpeed: 0.6,
@@ -38,7 +40,8 @@
         wireframeOpacity: 1.0,
         bloomStrength: 0.5,
         bloomRadius: 0.5,
-        bloomThreshold: 0.2
+        bloomThreshold: 0.2,
+        showMeters: true
     });
 
     const presetState = $state({
@@ -80,27 +83,54 @@
                     Waveform: 'waveform'
                 }
             })
-            .on('change', syncToStore);
+            .on('change', () => {
+                syncToStore();
+                rebuildPane();
+            });
 
-        viewFolder
-            .addBinding(localParams, 'geometryType', {
-                options: {
-                    Icosa: 'icosahedron',
-                    Sphere: 'sphere',
-                    Torus: 'torus',
-                    Octa: 'octahedron'
-                }
-            })
-            .on('change', syncToStore);
+        if (localParams.displayMode === 'sphere') {
+            viewFolder
+                .addBinding(localParams, 'geometryType', {
+                    options: {
+                        Icosa: 'icosahedron',
+                        Sphere: 'sphere',
+                        Torus: 'torus',
+                        Cube: 'cube'
+                    }
+                })
+                .on('change', syncToStore);
+        } else {
+            viewFolder
+                .addBinding(localParams, 'waveformStyle', {
+                    label: 'style',
+                    options: {
+                        Line: 'line',
+                        Bars: 'bars',
+                        Mirror: 'mirror'
+                    }
+                })
+                .on('change', syncToStore);
+        }
 
         const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
         geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
         geomFolder.addBinding(localParams, 'noiseAmp', { min: 0, max: 50, step: 1 }).on('change', syncToStore);
         geomFolder.addBinding(localParams, 'noiseSpeed', { min: 0.1, max: 2, step: 0.1 }).on('change', syncToStore);
-        geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
+
+        if (localParams.displayMode === 'sphere') {
+            geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
+        }
+
+        geomFolder
+            .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
+            .on('change', syncToStore);
 
         const audioFolder = editorPane.addFolder({ title: 'AUDIO' });
-        audioFolder.addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 }).on('change', syncToStore);
+        audioFolder
+            .addBinding(localParams, 'showMeters', {
+                label: 'meters'
+            })
+            .on('change', syncToStore);
 
         const postFolder = editorPane.addFolder({ title: 'POST' });
         postFolder.addBinding(localParams, 'bloomStrength', { min: 0, max: 2, step: 0.1 }).on('change', syncToStore);
@@ -128,7 +158,7 @@
         if (loaded) {
             presetState.presetName = presetState.selectedPreset;
             Object.assign(localParams, loaded);
-            refreshPane();
+            rebuildPane();
         }
     }
 
@@ -150,7 +180,7 @@
         Object.assign(localParams, defaultVisualParams);
         presetState.selectedPreset = 'default';
         presetState.presetName = 'default';
-        refreshPane();
+        rebuildPane();
     }
 
     function handleExportPresets() {
@@ -184,6 +214,7 @@
         const unsubParams = params.subscribe((p) => {
             localParams.displayMode = p.displayMode;
             localParams.geometryType = p.geometryType;
+            localParams.waveformStyle = p.waveformStyle;
             localParams.noiseFreq = p.noiseFreq;
             localParams.noiseAmp = p.noiseAmp;
             localParams.noiseSpeed = p.noiseSpeed;
@@ -192,6 +223,7 @@
             localParams.bloomStrength = p.bloomStrength;
             localParams.bloomRadius = p.bloomRadius;
             localParams.bloomThreshold = p.bloomThreshold;
+            localParams.showMeters = p.showMeters;
             refreshPane();
         });
 
@@ -217,22 +249,24 @@
 
 <div class="editor-shell">
     <div class="editor" bind:this={container}></div>
-    <div class="meters-panel">
-        <div class="meter-row">
-            <span class="meter-label">DB</span>
-            <div class="meter-bar">
-                <div class="meter-fill" style={`width: ${Math.max(0, Math.min(100, ((Number(dbValue) + 60) / 60) * 100))}%`}></div>
+    {#if localParams.showMeters}
+        <div class="meters-panel">
+            <div class="meter-row">
+                <span class="meter-label">DB</span>
+                <div class="meter-bar">
+                    <div class="meter-fill" style={`width: ${Math.max(0, Math.min(100, ((Number(dbValue) + 60) / 60) * 100))}%`}></div>
+                </div>
+                <span class="meter-value">{dbValue}</span>
             </div>
-            <span class="meter-value">{dbValue}</span>
-        </div>
-        <div class="meter-row">
-            <span class="meter-label">LUFS</span>
-            <div class="meter-bar">
-                <div class="meter-fill" style={`width: ${Math.max(0, Math.min(100, ((Number(lufsValue) + 60) / 60) * 100))}%`}></div>
+            <div class="meter-row">
+                <span class="meter-label">LUFS</span>
+                <div class="meter-bar">
+                    <div class="meter-fill" style={`width: ${Math.max(0, Math.min(100, ((Number(lufsValue) + 60) / 60) * 100))}%`}></div>
+                </div>
+                <span class="meter-value">{lufsValue}</span>
             </div>
-            <span class="meter-value">{lufsValue}</span>
         </div>
-    </div>
+    {/if}
     <input bind:this={importInput} type="file" accept="application/json" onchange={handleImportPresets} hidden />
 </div>
 

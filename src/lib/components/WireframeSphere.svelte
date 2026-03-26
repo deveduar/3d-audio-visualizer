@@ -105,15 +105,22 @@
     const fragmentShader = `
         uniform float uOpacity;
         uniform float uTreble;
+        uniform float uBloomStrength;
+        uniform float uBloomRadius;
+        uniform float uBloomThreshold;
 
         varying float vDisplacement;
 
         void main() {
             float absDisp = abs(vDisplacement);
-            float glow = smoothstep(0.0, 10.0, absDisp);
-            float brightness = 0.5 + glow * 0.5 + uTreble * 0.5;
+            float threshold = mix(0.05, 6.0, uBloomThreshold);
+            float radius = mix(0.2, 8.0, uBloomRadius);
+            float glow = smoothstep(threshold, threshold + radius, absDisp);
+            float bloom = glow * (0.4 + uBloomStrength);
+            float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25);
+            float alpha = clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
 
-            gl_FragColor = vec4(vec3(brightness), uOpacity);
+            gl_FragColor = vec4(vec3(brightness), alpha);
         }
     `;
 
@@ -130,7 +137,10 @@
             uRMS: { value: 0.1 },
             uBass: { value: 0 },
             uTreble: { value: 0 },
-            uOpacity: { value: 1.0 }
+            uOpacity: { value: 1.0 },
+            uBloomStrength: { value: 0.5 },
+            uBloomRadius: { value: 0.5 },
+            uBloomThreshold: { value: 0.2 }
         }
     });
 
@@ -151,6 +161,9 @@
         material.uniforms.uNoiseFreq.value = p.noiseFreq;
         material.uniforms.uNoiseAmp.value = p.noiseAmp;
         material.uniforms.uOpacity.value = p.wireframeOpacity;
+        material.uniforms.uBloomStrength.value = p.bloomStrength;
+        material.uniforms.uBloomRadius.value = p.bloomRadius;
+        material.uniforms.uBloomThreshold.value = p.bloomThreshold;
     });
 </script>
 
@@ -165,9 +178,9 @@
             <T.TorusKnotGeometry args={[$params.baseRadius * 0.55, $params.baseRadius * 0.18, 220, 32]} />
             <T is={material} />
         </T.Mesh>
-    {:else if $params.geometryType === 'octahedron'}
+    {:else if $params.geometryType === 'cube'}
         <T.Mesh>
-            <T.OctahedronGeometry args={[$params.baseRadius, 6]} />
+            <T.BoxGeometry args={[$params.baseRadius * 1.5, $params.baseRadius * 1.5, $params.baseRadius * 1.5, 12, 12, 12]} />
             <T is={material} />
         </T.Mesh>
     {:else}
