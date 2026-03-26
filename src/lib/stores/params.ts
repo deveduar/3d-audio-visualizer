@@ -10,6 +10,7 @@ export type ThemeMode = 'dark' | 'light';
 export type ThemePreset = 'mono' | 'sunset' | 'ice' | 'acid';
 export type NebulaVariant = 'cloud' | 'vortex' | 'ribbons';
 export type TunnelVariant = 'rings' | 'helix' | 'pulse';
+export type GridRender = 'lines' | 'points' | 'bars';
 
 export interface VisualParams {
     displayMode: DisplayMode;
@@ -37,6 +38,7 @@ export interface VisualParams {
     nebulaPulse: number;
     nebulaSpread: number;
     tunnelVariant: TunnelVariant;
+    gridRender: GridRender;
     tunnelDensity: number;
     tunnelSpeed: number;
     tunnelTwist: number;
@@ -91,6 +93,7 @@ export const defaultVisualParams: VisualParams = {
     nebulaPulse: 0.65,
     nebulaSpread: 0.58,
     tunnelVariant: 'rings',
+    gridRender: 'lines',
     tunnelDensity: 0.7,
     tunnelSpeed: 0.9,
     tunnelTwist: 0.35,
@@ -234,6 +237,10 @@ function isTunnelVariant(value: unknown): value is TunnelVariant {
     return value === 'rings' || value === 'helix' || value === 'pulse';
 }
 
+function isGridRender(value: unknown): value is GridRender {
+    return value === 'lines' || value === 'points' || value === 'bars';
+}
+
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
@@ -268,6 +275,7 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         nebulaSpread:
             typeof value?.nebulaSpread === 'number' ? value.nebulaSpread : defaultVisualParams.nebulaSpread,
         tunnelVariant: isTunnelVariant(value?.tunnelVariant) ? value.tunnelVariant : defaultVisualParams.tunnelVariant,
+        gridRender: isGridRender(value?.gridRender) ? value.gridRender : defaultVisualParams.gridRender,
         tunnelDensity:
             typeof value?.tunnelDensity === 'number' ? value.tunnelDensity : defaultVisualParams.tunnelDensity,
         tunnelSpeed: typeof value?.tunnelSpeed === 'number' ? value.tunnelSpeed : defaultVisualParams.tunnelSpeed,

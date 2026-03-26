@@ -11,6 +11,7 @@
         type ThemePreset,
         type WaveformStyle,
         type NebulaVariant,
+        type GridRender,
         type TunnelVariant,
         type VisualParams,
         resetCameraView,
@@ -68,6 +69,7 @@
         nebulaPulse: 0.65,
         nebulaSpread: 0.58,
         tunnelVariant: 'rings' as TunnelVariant,
+        gridRender: 'lines' as GridRender,
         tunnelDensity: 0.7,
         tunnelSpeed: 0.9,
         tunnelTwist: 0.35,
@@ -265,6 +267,16 @@
                         Plane: 'rings',
                         Drift: 'helix',
                         Scan: 'pulse'
+                    }
+                })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'gridRender', {
+                    label: 'render',
+                    options: {
+                        Lines: 'lines',
+                        Points: 'points',
+                        Bars: 'bars'
                     }
                 })
                 .on('change', syncToStore);
@@ -490,6 +502,7 @@
             localParams.nebulaPulse = p.nebulaPulse;
             localParams.nebulaSpread = p.nebulaSpread;
             localParams.tunnelVariant = p.tunnelVariant;
+            localParams.gridRender = p.gridRender;
             localParams.tunnelDensity = p.tunnelDensity;
             localParams.tunnelSpeed = p.tunnelSpeed;
             localParams.tunnelTwist = p.tunnelTwist;

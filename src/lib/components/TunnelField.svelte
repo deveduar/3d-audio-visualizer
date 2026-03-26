@@ -36,6 +36,7 @@
         uniform float uGain;
         uniform float uOpacity;
         uniform float uVariant;
+        uniform float uRenderMode;
         uniform float uPostEnabled;
         uniform float uBloomStrength;
         uniform float uBloomRadius;
@@ -95,10 +96,19 @@
             float gridZMajor = lineMask(worldZ * 0.12, majorWidth);
             float gridZMinor = lineMask(worldZ * 0.46, minorWidth) * 0.3;
 
-            float grid = max(gridXMajor + gridXMinor, gridZMajor + gridZMinor);
+            float lineGrid = max(gridXMajor + gridXMinor, gridZMajor + gridZMinor);
+            float pointGrid = (gridXMajor * gridZMajor) + (gridXMinor * gridZMinor * 0.7);
+            float barGrid = gridZMajor * 1.25 + gridZMinor * 0.55 + gridXMajor * 0.22;
             float scanlines = lineMask((uv.y + travel * 0.025) * (18.0 + uDensity * 10.0), 0.18) * (0.08 + uTreble * 0.16);
             float pulse = smoothstep(0.45, 1.0, sin(worldZ * (0.35 + uPulse * 0.6) - travel * (1.3 + uPulse)) * 0.5 + 0.5)
                 * (uTransient * 0.9 + uRms * 0.22);
+
+            float grid = lineGrid;
+            if (uRenderMode > 0.5 && uRenderMode < 1.5) {
+                grid = pointGrid * 1.45;
+            } else if (uRenderMode >= 1.5) {
+                grid = barGrid;
+            }
 
             float horizonGlow = smoothstep(0.38, -0.22, planeUv.y) * (0.02 + uBass * 0.08);
             float floorFade = smoothstep(0.08, 0.95, verticalPerspective);
@@ -146,6 +156,7 @@
             uGain: { value: 15 },
             uOpacity: { value: 1 },
             uVariant: { value: 0 },
+            uRenderMode: { value: 0 },
             uPostEnabled: { value: 1 },
             uBloomStrength: { value: 0.5 },
             uBloomRadius: { value: 0.5 },
@@ -180,6 +191,8 @@
         material.uniforms.uOpacity.value = p.wireframeOpacity;
         material.uniforms.uVariant.value =
             p.tunnelVariant === 'helix' ? 1 : p.tunnelVariant === 'pulse' ? 2 : 0;
+        material.uniforms.uRenderMode.value =
+            p.gridRender === 'points' ? 1 : p.gridRender === 'bars' ? 2 : 0;
         material.uniforms.uPostEnabled.value = p.postEnabled ? 1 : 0;
         material.uniforms.uBloomStrength.value = p.bloomStrength;
         material.uniforms.uBloomRadius.value = p.bloomRadius;
