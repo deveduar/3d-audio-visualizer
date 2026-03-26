@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 
-export type DisplayMode = 'sphere' | 'waveform' | 'nebula';
+export type DisplayMode = 'sphere' | 'waveform' | 'nebula' | 'tunnel';
 export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube' | 'dodecahedron' | 'cone' | 'cylinder';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
 export type RenderMode = 'wireframe' | 'solid';
@@ -9,6 +9,7 @@ export type CameraMode = 'locked' | 'orbit' | 'reactive' | 'orbit-reactive';
 export type ThemeMode = 'dark' | 'light';
 export type ThemePreset = 'mono' | 'sunset' | 'ice' | 'acid';
 export type NebulaVariant = 'cloud' | 'vortex' | 'ribbons';
+export type TunnelVariant = 'rings' | 'helix' | 'pulse';
 
 export interface VisualParams {
     displayMode: DisplayMode;
@@ -35,6 +36,11 @@ export interface VisualParams {
     nebulaDrift: number;
     nebulaPulse: number;
     nebulaSpread: number;
+    tunnelVariant: TunnelVariant;
+    tunnelDensity: number;
+    tunnelSpeed: number;
+    tunnelTwist: number;
+    tunnelPulse: number;
     wireframeOpacity: number;
     postEnabled: boolean;
     bloomStrength: number;
@@ -84,6 +90,11 @@ export const defaultVisualParams: VisualParams = {
     nebulaDrift: 0.7,
     nebulaPulse: 0.65,
     nebulaSpread: 0.58,
+    tunnelVariant: 'rings',
+    tunnelDensity: 0.7,
+    tunnelSpeed: 0.9,
+    tunnelTwist: 0.35,
+    tunnelPulse: 0.75,
     wireframeOpacity: 1.0,
     postEnabled: true,
     bloomStrength: 0.5,
@@ -132,6 +143,21 @@ const DEFAULT_PRESETS: VisualPresetMap = {
         noiseSpeed: 0.75,
         bloomStrength: 0.8,
         bloomRadius: 0.7
+    },
+    tunnel_run: {
+        ...defaultVisualParams,
+        displayMode: 'tunnel',
+        themePreset: 'sunset',
+        primaryColor: '#ff8a3d',
+        secondaryColor: '#ff4d6d',
+        backgroundColor: '#12040d',
+        tunnelVariant: 'helix',
+        tunnelDensity: 0.85,
+        tunnelSpeed: 1.1,
+        tunnelTwist: 0.62,
+        tunnelPulse: 0.9,
+        bloomStrength: 0.7,
+        bloomRadius: 0.6
     }
 };
 
@@ -165,7 +191,7 @@ export const THEME_PRESETS: Record<ThemePreset, ThemePalette> = {
 };
 
 function isDisplayMode(value: unknown): value is DisplayMode {
-    return value === 'sphere' || value === 'waveform' || value === 'nebula';
+    return value === 'sphere' || value === 'waveform' || value === 'nebula' || value === 'tunnel';
 }
 
 function isGeometryType(value: unknown): value is GeometryType {
@@ -204,6 +230,10 @@ function isNebulaVariant(value: unknown): value is NebulaVariant {
     return value === 'cloud' || value === 'vortex' || value === 'ribbons';
 }
 
+function isTunnelVariant(value: unknown): value is TunnelVariant {
+    return value === 'rings' || value === 'helix' || value === 'pulse';
+}
+
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
     return {
         displayMode: isDisplayMode(value?.displayMode) ? value.displayMode : defaultVisualParams.displayMode,
@@ -237,6 +267,12 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         nebulaPulse: typeof value?.nebulaPulse === 'number' ? value.nebulaPulse : defaultVisualParams.nebulaPulse,
         nebulaSpread:
             typeof value?.nebulaSpread === 'number' ? value.nebulaSpread : defaultVisualParams.nebulaSpread,
+        tunnelVariant: isTunnelVariant(value?.tunnelVariant) ? value.tunnelVariant : defaultVisualParams.tunnelVariant,
+        tunnelDensity:
+            typeof value?.tunnelDensity === 'number' ? value.tunnelDensity : defaultVisualParams.tunnelDensity,
+        tunnelSpeed: typeof value?.tunnelSpeed === 'number' ? value.tunnelSpeed : defaultVisualParams.tunnelSpeed,
+        tunnelTwist: typeof value?.tunnelTwist === 'number' ? value.tunnelTwist : defaultVisualParams.tunnelTwist,
+        tunnelPulse: typeof value?.tunnelPulse === 'number' ? value.tunnelPulse : defaultVisualParams.tunnelPulse,
         wireframeOpacity: typeof value?.wireframeOpacity === 'number' ? value.wireframeOpacity : defaultVisualParams.wireframeOpacity,
         postEnabled: typeof value?.postEnabled === 'boolean' ? value.postEnabled : defaultVisualParams.postEnabled,
         bloomStrength: typeof value?.bloomStrength === 'number' ? value.bloomStrength : defaultVisualParams.bloomStrength,

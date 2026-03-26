@@ -10,6 +10,9 @@
         type ThemeMode,
         type ThemePreset,
         type WaveformStyle,
+        type NebulaVariant,
+        type TunnelVariant,
+        type VisualParams,
         resetCameraView,
         defaultVisualParams,
         getPresetNames,
@@ -39,7 +42,7 @@
     let transientValue = $state(0);
     let presetNames = $state<string[]>(getPresetNames());
 
-    const localParams = $state({
+    const localParams = $state<VisualParams>({
         displayMode: 'sphere' as DisplayMode,
         geometryType: 'icosahedron' as GeometryType,
         renderMode: 'wireframe' as RenderMode,
@@ -58,12 +61,17 @@
         noiseFreq: 0.1,
         noiseAmp: 15,
         noiseSpeed: 0.6,
-        nebulaVariant: 'cloud',
+        nebulaVariant: 'cloud' as NebulaVariant,
         nebulaDensity: 0.62,
         nebulaFlow: 0.55,
         nebulaDrift: 0.7,
         nebulaPulse: 0.65,
         nebulaSpread: 0.58,
+        tunnelVariant: 'rings' as TunnelVariant,
+        tunnelDensity: 0.7,
+        tunnelSpeed: 0.9,
+        tunnelTwist: 0.35,
+        tunnelPulse: 0.75,
         baseRadius: 20,
         wireframeOpacity: 1.0,
         postEnabled: true,
@@ -121,14 +129,15 @@
 
         const viewFolder = editorPane.addFolder({ title: 'VIEW' });
         viewFolder
-            .addBinding(localParams, 'displayMode', {
-                label: 'mode',
-                options: {
-                    Geometry: 'sphere',
-                    Waveform: 'waveform',
-                    Nebula: 'nebula'
-                }
-            })
+                .addBinding(localParams, 'displayMode', {
+                    label: 'mode',
+                    options: {
+                        Geometry: 'sphere',
+                        Waveform: 'waveform',
+                        Nebula: 'nebula',
+                        Grid: 'tunnel'
+                    }
+                })
             .on('change', () => {
                 syncToStore();
                 rebuildPane();
@@ -247,6 +256,42 @@
             nebulaFolder
                 .addBinding(localParams, 'wireframeOpacity', { label: 'opacity', min: 0.1, max: 1, step: 0.05 })
                 .on('change', syncToStore);
+        } else if (localParams.displayMode === 'tunnel') {
+            const tunnelFolder = editorPane.addFolder({ title: 'GRID WARP' });
+            tunnelFolder
+                .addBinding(localParams, 'tunnelVariant', {
+                    label: 'mode',
+                    options: {
+                        Plane: 'rings',
+                        Drift: 'helix',
+                        Scan: 'pulse'
+                    }
+                })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'tunnelDensity', { label: 'density', min: 0.2, max: 1.4, step: 0.01 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'tunnelSpeed', { label: 'speed', min: 0.1, max: 1.8, step: 0.01 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'tunnelTwist', { label: 'twist', min: 0, max: 1.4, step: 0.01 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'tunnelPulse', { label: 'pulse', min: 0, max: 1.5, step: 0.01 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'noiseFreq', { label: 'drift', min: 0, max: 0.4, step: 0.01 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'noiseSpeed', { label: 'drive', min: 0.1, max: 2.4, step: 0.05 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'noiseAmp', { label: 'glow', min: 0, max: 40, step: 1 })
+                .on('change', syncToStore);
+            tunnelFolder
+                .addBinding(localParams, 'wireframeOpacity', { label: 'opacity', min: 0.1, max: 1, step: 0.05 })
+                .on('change', syncToStore);
         } else {
             const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
             geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
@@ -262,7 +307,7 @@
                 .on('change', syncToStore);
         }
 
-        if (localParams.displayMode !== 'nebula') {
+        if (localParams.displayMode === 'sphere') {
             const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
             cameraFolder
                 .addBinding(localParams, 'cameraMode', {
@@ -444,6 +489,11 @@
             localParams.nebulaDrift = p.nebulaDrift;
             localParams.nebulaPulse = p.nebulaPulse;
             localParams.nebulaSpread = p.nebulaSpread;
+            localParams.tunnelVariant = p.tunnelVariant;
+            localParams.tunnelDensity = p.tunnelDensity;
+            localParams.tunnelSpeed = p.tunnelSpeed;
+            localParams.tunnelTwist = p.tunnelTwist;
+            localParams.tunnelPulse = p.tunnelPulse;
             localParams.baseRadius = p.baseRadius;
             localParams.wireframeOpacity = p.wireframeOpacity;
             localParams.postEnabled = p.postEnabled;

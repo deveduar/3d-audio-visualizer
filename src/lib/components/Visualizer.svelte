@@ -66,7 +66,7 @@
 </script>
 
 <div class="visualizer" style={themeVars}>
-    {#if $params.displayMode === 'sphere'}
+    {#if $params.displayMode === 'sphere' || $params.displayMode === 'tunnel'}
         <Canvas>
             <Scene />
         </Canvas>
