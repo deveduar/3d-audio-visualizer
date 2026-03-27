@@ -43,51 +43,7 @@
     let transientValue = $state(0);
     let presetNames = $state<string[]>(getPresetNames());
 
-    const localParams = $state<VisualParams>({
-        displayMode: 'sphere' as DisplayMode,
-        geometryType: 'icosahedron' as GeometryType,
-        renderMode: 'wireframe' as RenderMode,
-        waveformStyle: 'line' as WaveformStyle,
-        cameraMode: 'orbit-reactive' as CameraMode,
-        cameraDistance: 120,
-        cameraReactiveAmount: 0.7,
-        cameraDamping: 0.1,
-        cameraEnableZoom: true,
-        cameraEnablePan: false,
-        themeMode: 'dark' as ThemeMode,
-        themePreset: 'mono' as ThemePreset,
-        primaryColor: '#ffffff',
-        secondaryColor: '#9f9f9f',
-        backgroundColor: '#000000',
-        noiseFreq: 0.05,
-        noiseAmp: 2,
-        noiseSpeed: 0.2,
-        nebulaVariant: 'cloud' as NebulaVariant,
-        nebulaDensity: 0.62,
-        nebulaFlow: 0.55,
-        nebulaDrift: 0.7,
-        nebulaPulse: 0.65,
-        nebulaSpread: 0.58,
-        tunnelVariant: 'rings' as TunnelVariant,
-        gridRender: 'lines' as GridRender,
-        tunnelDensity: 0.7,
-        tunnelSpeed: 0.9,
-        tunnelTwist: 0.35,
-        tunnelPulse: 0.75,
-        baseRadius: 20,
-        wireframeOpacity: 1.0,
-        postEnabled: true,
-        bloomStrength: 0.5,
-        bloomRadius: 0.5,
-        bloomThreshold: 0.2,
-        showMeters: true,
-        showBands: true,
-        showImpactOverlay: false,
-        showOverlayLines: false,
-        impactSensitivity: 0.08,
-        impactFlash: 0.9,
-        impactFrame: 1
-    });
+    let localParams = $state<VisualParams>(defaultVisualParams);
 
     const presetState = $state({
         selectedPreset: 'default',
@@ -121,7 +77,11 @@
     }
 
     function rebuildPane() {
-        pane?.dispose();
+        try {
+            pane?.dispose();
+        } catch (err) {
+            console.warn('Tweakpane dispose warning:', err);
+        }
 
         const editorPane = new Pane({
             container,
@@ -142,7 +102,7 @@
                 })
             .on('change', () => {
                 syncToStore();
-                rebuildPane();
+                setTimeout(() => rebuildPane(), 0);
             });
 
         if (localParams.displayMode === 'sphere') {
@@ -168,7 +128,22 @@
                         Solid: 'solid'
                     }
                 })
-                .on('change', syncToStore);
+                .on('change', syncToStore)
+                .on('change', () => {
+                    setTimeout(() => rebuildPane(), 0);
+                });
+
+            if (localParams.renderMode === 'solid') {
+                viewFolder
+                    .addBinding(localParams, 'solidOpacity', { label: 'solid opacity', min: 0.1, max: 1.0, step: 0.05 })
+                    .on('change', syncToStore);
+
+                viewFolder
+                    .addBinding(localParams, 'solidBackfaceCulling', { label: 'solid culling' })
+                    .on('change', syncToStore);
+            }
+
+
         } else if (localParams.displayMode === 'waveform') {
             viewFolder
                 .addBinding(localParams, 'waveformStyle', {
@@ -361,6 +336,11 @@
                 label: 'bands'
             })
             .on('change', syncToStore);
+        audioFolder
+            .addBinding(localParams, 'disableBassRebound', {
+                label: 'freeze audio'
+            })
+            .on('change', syncToStore);
 
         const overlayFolder = editorPane.addFolder({ title: 'OVERLAY' });
         overlayFolder
@@ -520,7 +500,8 @@
             localParams.impactSensitivity = p.impactSensitivity;
             localParams.impactFlash = p.impactFlash;
             localParams.impactFrame = p.impactFrame;
-            refreshPane();
+            // No rebuild on every params update to avoid disposing the active view repeatedly
+            // refreshPane();
         });
 
         const unsubDb = dbLevel.subscribe((value) => {

@@ -56,6 +56,9 @@ export interface VisualParams {
     impactSensitivity: number;
     impactFlash: number;
     impactFrame: number;
+    disableBassRebound: boolean;
+    solidOpacity: number;
+    solidBackfaceCulling: boolean;
 }
 
 export type VisualPresetMap = Record<string, VisualParams>;
@@ -74,8 +77,8 @@ export const defaultVisualParams: VisualParams = {
     waveformStyle: 'line',
     cameraMode: 'orbit-reactive',
     cameraDistance: 120,
-    cameraReactiveAmount: 0.7,
-    cameraDamping: 0.1,
+    cameraReactiveAmount: 0,
+    cameraDamping: 0,
     cameraEnableZoom: true,
     cameraEnablePan: false,
     themeMode: 'dark',
@@ -110,7 +113,10 @@ export const defaultVisualParams: VisualParams = {
     showOverlayLines: false,
     impactSensitivity: 0.08,
     impactFlash: 0.9,
-    impactFrame: 1
+    impactFrame: 1,
+    disableBassRebound: false,
+    solidOpacity: 1.0,
+    solidBackfaceCulling: true
 };
 
 const DEFAULT_PRESETS: VisualPresetMap = {
@@ -293,7 +299,10 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         showOverlayLines: typeof value?.showOverlayLines === 'boolean' ? value.showOverlayLines : defaultVisualParams.showOverlayLines,
         impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,
         impactFlash: typeof value?.impactFlash === 'number' ? value.impactFlash : defaultVisualParams.impactFlash,
-        impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame
+        impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame,
+        disableBassRebound: typeof value?.disableBassRebound === 'boolean' ? value.disableBassRebound : defaultVisualParams.disableBassRebound,
+        solidOpacity: typeof value?.solidOpacity === 'number' ? value.solidOpacity : defaultVisualParams.solidOpacity,
+        solidBackfaceCulling: typeof value?.solidBackfaceCulling === 'boolean' ? value.solidBackfaceCulling : defaultVisualParams.solidBackfaceCulling
     };
 }
 

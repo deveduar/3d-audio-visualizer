@@ -105,6 +105,8 @@
 
     const fragmentShader = `
         uniform float uOpacity;
+        uniform float uSolidOpacity;
+        uniform bool uIsSolid;
         uniform float uTreble;
         uniform float uTransient;
         uniform float uBloomStrength;
@@ -122,7 +124,7 @@
             float glow = smoothstep(threshold, threshold + radius, absDisp);
             float bloom = glow * (0.4 + uBloomStrength);
             float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25) + uTransient * 0.35;
-            float alpha = clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
+            float alpha = uIsSolid ? uSolidOpacity : clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
             vec3 baseColor = mix(uSecondaryColor, uPrimaryColor, clamp(glow + uTreble * 0.65 + uTransient * 0.45, 0.0, 1.0));
             vec3 finalColor = baseColor * brightness;
 
@@ -145,6 +147,8 @@
             uTransient: { value: 0 },
             uTreble: { value: 0 },
             uOpacity: { value: 1.0 },
+            uSolidOpacity: { value: 1.0 },
+            uIsSolid: { value: false },
             uBloomStrength: { value: 0.5 },
             uBloomRadius: { value: 0.5 },
             uBloomThreshold: { value: 0.2 },
@@ -158,32 +162,36 @@
         time += delta * p.noiseSpeed;
         const currentBass = get(bass);
         const currentTreble = get(treble);
-        rotation += delta * (0.08 + currentBass * 0.55 + currentTreble * 0.18);
+        const audioMultiplier = p.disableBassRebound ? 0 : 1;
+        rotation += delta * (0.08 + currentBass * 0.55 * audioMultiplier + currentTreble * 0.18 * audioMultiplier);
 
         const currentRms = Math.max(0.01, get(rms));
         const currentTransient = get(transient);
-        const targetScale = 0.48 + currentRms * 2.2 + currentBass * 0.45 + currentTransient * 0.85;
+        const targetScale = 0.48 + currentRms * 2.2 * audioMultiplier + currentBass * 0.45 * audioMultiplier + currentTransient * 0.85 * audioMultiplier;
         scale = scale + (targetScale - scale) * 0.16;
         animScale += (1 - animScale) * 0.08;
 
         material.uniforms.uTime.value = time;
-        material.uniforms.uRMS.value = currentRms;
-        material.uniforms.uBass.value = currentBass;
-        material.uniforms.uTransient.value = currentTransient;
-        material.uniforms.uTreble.value = currentTreble;
+        material.uniforms.uRMS.value = currentRms * audioMultiplier;
+        material.uniforms.uBass.value = currentBass * audioMultiplier;
+        material.uniforms.uTransient.value = currentTransient * audioMultiplier;
+        material.uniforms.uTreble.value = currentTreble * audioMultiplier;
         material.uniforms.uNoiseFreq.value = p.noiseFreq;
         material.uniforms.uNoiseAmp.value = p.noiseAmp;
         material.uniforms.uOpacity.value = p.wireframeOpacity;
+        material.uniforms.uSolidOpacity.value = p.solidOpacity;
+        material.uniforms.uIsSolid.value = p.renderMode === 'solid';
         material.uniforms.uBloomStrength.value = p.postEnabled ? p.bloomStrength : 0;
         material.uniforms.uBloomRadius.value = p.postEnabled ? p.bloomRadius : 0;
         material.uniforms.uBloomThreshold.value = p.postEnabled ? p.bloomThreshold : 0;
         material.uniforms.uPrimaryColor.value.set(p.primaryColor);
         material.uniforms.uSecondaryColor.value.set(p.secondaryColor);
         material.wireframe = p.renderMode === 'wireframe';
+        material.side = p.renderMode === 'solid' && p.solidBackfaceCulling ? 0 : DoubleSide; // 0 is FrontSide
     });
 </script>
 
-<T.Group rotation.y={rotation} rotation.x={rotation * 0.32} scale={scale * animScale}>
+<T.Group rotation={[rotation * 0.32, rotation, 0]} scale={[scale * animScale, scale * animScale, scale * animScale]}>
     {#key `${$params.geometryType}-${$params.renderMode}-${$params.baseRadius}`}
         {#if $params.geometryType === 'sphere'}
             <T.Mesh>

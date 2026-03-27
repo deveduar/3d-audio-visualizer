@@ -28,18 +28,19 @@
         }
 
         const reactiveEnabled = p.cameraMode === 'reactive' || p.cameraMode === 'orbit-reactive';
-        const dampingFactor = 0.04 + p.cameraDamping * 0.3;
-        const eventIntensity = reactiveEnabled ? impact * p.cameraReactiveAmount * (0.8 + p.impactFrame * 1.6) : 0;
+        const audioMultiplier = p.disableBassRebound ? 0 : 1;
+        const dampingFactor = (0.04 + p.cameraDamping * 0.3) * audioMultiplier;
+        const eventIntensity = reactiveEnabled ? impact * p.cameraReactiveAmount * (0.8 + p.impactFrame * 1.6) * audioMultiplier : 0;
         const cameraPush = eventIntensity * (0.4 + p.impactFlash * 1.4);
-        const targetX = low * 2.4 * cameraPush;
+        const targetX = low * 2.4 * cameraPush * audioMultiplier;
         const targetY = eventIntensity * 1.6;
-        const targetZ = -eventIntensity * (8 + p.impactFlash * 5) - low * 5 * p.cameraReactiveAmount;
+        const targetZ = -eventIntensity * (8 + p.impactFlash * 5) - low * 5 * p.cameraReactiveAmount * audioMultiplier;
 
         cameraX += (targetX - cameraX) * dampingFactor;
         cameraY += (targetY - cameraY) * dampingFactor;
         cameraZ += (targetZ - cameraZ) * dampingFactor;
         rigRotationZ += (0 - rigRotationZ) * 0.12;
-        lightA += ((1 + low * 0.45 + eventIntensity * (1.3 + p.impactFlash)) - lightA) * 0.12;
+        lightA += ((1 + low * 0.45 * audioMultiplier + eventIntensity * (1.3 + p.impactFlash)) - lightA) * 0.12;
         lightB += ((0.5 + eventIntensity * (0.7 + p.impactFrame * 0.55)) - lightB) * 0.12;
     });
 </script>
