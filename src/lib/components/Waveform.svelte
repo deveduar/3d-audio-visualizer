@@ -45,14 +45,16 @@
         ctx.fillRect(0, 0, width, height);
         ctx.save();
 
+        const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+
         if (points.length > 0) {
             const style = $params.waveformStyle;
-            const gain = 0.45 + $params.noiseAmp / 40 + $transient * 0.35;
+            const gain = 0.45 + $params.noiseAmp / 40 + $transient * 0.35 * audioMultiplier;
             const bloomRadius = $params.postEnabled ? $params.bloomRadius : 0;
             const bloomStrength = $params.postEnabled ? $params.bloomStrength : 0;
             const threshold = ($params.postEnabled ? $params.bloomThreshold : 0) * 0.45;
             const lineWidth = compact ? 1.5 : 1.5 + bloomRadius * 3;
-            const alpha = 0.5 + $params.wireframeOpacity * 0.45 + $transient * 0.12;
+            const alpha = 0.5 + $params.wireframeOpacity * 0.45 + $transient * 0.12 * audioMultiplier;
 
             ctx.strokeStyle = `${primary}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
             ctx.fillStyle = `${secondary}${Math.round((0.2 + bloomStrength * 0.18) * 255).toString(16).padStart(2, '0')}`;
@@ -104,7 +106,8 @@
 
             ctx.shadowBlur = 0;
         } else {
-            const amplitude = ($isPlaying ? $rms : 0.02) * height * 0.35;
+            const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+            const amplitude = ($isPlaying ? $rms : 0.02) * audioMultiplier * height * 0.35;
             ctx.beginPath();
             ctx.moveTo(0, centerY);
             ctx.lineTo(width, centerY + amplitude);

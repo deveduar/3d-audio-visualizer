@@ -186,10 +186,11 @@
 
         gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), canvas.width, canvas.height);
         gl.uniform1f(gl.getUniformLocation(program, 'uTime'), time);
-        gl.uniform1f(gl.getUniformLocation(program, 'uBass'), $bass);
-        gl.uniform1f(gl.getUniformLocation(program, 'uMid'), $mid);
-        gl.uniform1f(gl.getUniformLocation(program, 'uTreble'), $treble);
-        gl.uniform1f(gl.getUniformLocation(program, 'uTransient'), $transient);
+        const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+        gl.uniform1f(gl.getUniformLocation(program, 'uBass'), $bass * audioMultiplier);
+        gl.uniform1f(gl.getUniformLocation(program, 'uMid'), $mid * audioMultiplier);
+        gl.uniform1f(gl.getUniformLocation(program, 'uTreble'), $treble * audioMultiplier);
+        gl.uniform1f(gl.getUniformLocation(program, 'uTransient'), $transient * audioMultiplier);
         gl.uniform1f(gl.getUniformLocation(program, 'uDensity'), $params.nebulaDensity);
         gl.uniform1f(gl.getUniformLocation(program, 'uFlow'), $params.nebulaFlow);
         gl.uniform1f(gl.getUniformLocation(program, 'uDrift'), $params.nebulaDrift);

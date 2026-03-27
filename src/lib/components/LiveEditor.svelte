@@ -648,14 +648,6 @@
         scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
     }
 
-    :global(.tp-rotv),
-    :global(.tp-fldv),
-    :global(.tp-lstv),
-    :global(.tp-txtv),
-    :global(.tp-btnv),
-    :global(.tp-tabv) {
-        background: transparent !important;
-    }
 
     :global(.tp-dfwv::-webkit-scrollbar) {
         width: 10px;

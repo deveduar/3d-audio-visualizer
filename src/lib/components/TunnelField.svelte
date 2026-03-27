@@ -176,11 +176,12 @@
         material.uniforms.uTime.value += delta;
         material.uniforms.uTrackTime.value = trackTime;
         material.uniforms.uTrackProgress.value = trackProgress;
-        material.uniforms.uBass.value = get(bass);
-        material.uniforms.uMid.value = get(mid);
-        material.uniforms.uTreble.value = get(treble);
-        material.uniforms.uRms.value = get(rms);
-        material.uniforms.uTransient.value = get(transient);
+        const audioMultiplier = p.disableBassRebound ? 0 : 1;
+        material.uniforms.uBass.value = get(bass) * audioMultiplier;
+        material.uniforms.uMid.value = get(mid) * audioMultiplier;
+        material.uniforms.uTreble.value = get(treble) * audioMultiplier;
+        material.uniforms.uRms.value = get(rms) * audioMultiplier;
+        material.uniforms.uTransient.value = get(transient) * audioMultiplier;
         material.uniforms.uDensity.value = p.tunnelDensity;
         material.uniforms.uSpeed.value = p.tunnelSpeed;
         material.uniforms.uDrive.value = p.noiseSpeed;

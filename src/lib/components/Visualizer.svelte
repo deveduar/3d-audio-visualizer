@@ -37,7 +37,7 @@
         const dark = $params.themeMode === 'dark';
         const text = dark ? '#f6f6f6' : '#0e0e0e';
         const muted = dark ? rgba($params.secondaryColor, 0.7) : rgba($params.secondaryColor, 0.82);
-        const panelBg = dark ? rgba($params.backgroundColor, 0.82) : rgba('#ffffff', 0.82);
+        const panelBg = $params.backgroundColor;
         const panelBorder = dark ? rgba($params.primaryColor, 0.18) : rgba($params.secondaryColor, 0.24);
         const trackBg = dark ? rgba($params.primaryColor, 0.08) : rgba($params.secondaryColor, 0.12);
         const scrollTrack = dark ? rgba($params.primaryColor, 0.08) : rgba($params.secondaryColor, 0.08);
