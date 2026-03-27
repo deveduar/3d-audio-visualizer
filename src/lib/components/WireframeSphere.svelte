@@ -114,20 +114,28 @@
         uniform float uBloomThreshold;
         uniform vec3 uPrimaryColor;
         uniform vec3 uSecondaryColor;
+        uniform bool uPostEnabled;
 
         varying float vDisplacement;
 
         void main() {
             float absDisp = abs(vDisplacement);
-            float threshold = mix(0.05, 6.0, uBloomThreshold);
-            float radius = mix(0.2, 8.0, uBloomRadius);
-            float glow = smoothstep(threshold, threshold + radius, absDisp);
-            float bloom = glow * (0.4 + uBloomStrength);
-            float brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25) + uTransient * 0.35;
-            float alpha = uIsSolid ? uSolidOpacity : clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
-            vec3 baseColor = mix(uSecondaryColor, uPrimaryColor, clamp(glow + uTreble * 0.65 + uTransient * 0.45, 0.0, 1.0));
-            vec3 finalColor = baseColor * brightness;
+            vec3 baseColor = uPrimaryColor;
+            float brightness = 1.0;
+            float alpha = uIsSolid ? uSolidOpacity : uOpacity;
 
+            if (uPostEnabled) {
+                float threshold = mix(0.05, 6.0, uBloomThreshold);
+                float radius = mix(0.2, 8.0, uBloomRadius);
+                float glow = smoothstep(threshold, threshold + radius, absDisp);
+                float bloom = glow * (0.4 + uBloomStrength);
+                
+                brightness = 0.18 + bloom + uTreble * (0.25 + uBloomStrength * 0.25) + uTransient * 0.35;
+                alpha = uIsSolid ? uSolidOpacity : clamp(uOpacity * (0.35 + glow * 0.9), 0.0, 1.0);
+                baseColor = mix(uSecondaryColor, uPrimaryColor, clamp(glow + uTreble * 0.65 + uTransient * 0.45, 0.0, 1.0));
+            }
+
+            vec3 finalColor = baseColor * brightness;
             gl_FragColor = vec4(finalColor, alpha);
         }
     `;
@@ -153,7 +161,8 @@
             uBloomRadius: { value: 0.5 },
             uBloomThreshold: { value: 0.2 },
             uPrimaryColor: { value: new Color('#ffffff') },
-            uSecondaryColor: { value: new Color('#9f9f9f') }
+            uSecondaryColor: { value: new Color('#9f9f9f') },
+            uPostEnabled: { value: true }
         }
     });
 
@@ -181,9 +190,10 @@
         material.uniforms.uOpacity.value = p.wireframeOpacity;
         material.uniforms.uSolidOpacity.value = p.solidOpacity;
         material.uniforms.uIsSolid.value = p.renderMode === 'solid';
-        material.uniforms.uBloomStrength.value = p.postEnabled ? p.bloomStrength : 0;
-        material.uniforms.uBloomRadius.value = p.postEnabled ? p.bloomRadius : 0;
-        material.uniforms.uBloomThreshold.value = p.postEnabled ? p.bloomThreshold : 0;
+        material.uniforms.uBloomStrength.value = p.bloomStrength;
+        material.uniforms.uBloomRadius.value = p.bloomRadius;
+        material.uniforms.uBloomThreshold.value = p.bloomThreshold;
+        material.uniforms.uPostEnabled.value = p.postEnabled;
         material.uniforms.uPrimaryColor.value.set(p.primaryColor);
         material.uniforms.uSecondaryColor.value.set(p.secondaryColor);
         material.wireframe = p.renderMode === 'wireframe';
