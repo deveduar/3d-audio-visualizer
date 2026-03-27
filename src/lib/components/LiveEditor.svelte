@@ -157,7 +157,36 @@
                 .on('change', syncToStore);
         }
 
-        const settingsFolder = editorPane.addFolder({ title: 'SETTINGS' });
+        const interfaceFolder = editorPane.addFolder({ title: 'INTERFACE' });
+        interfaceFolder
+            .addBinding(localParams, 'uiThemeMode', {
+                label: 'theme-ui',
+                options: {
+                    Dark: 'dark',
+                    Light: 'light'
+                }
+            })
+            .on('change', syncToStore);
+        interfaceFolder
+            .addBinding(localParams, 'uiPrimaryColor', {
+                label: 'primary-ui',
+                view: 'color'
+            })
+            .on('change', syncToStore);
+        interfaceFolder
+            .addBinding(localParams, 'uiSecondaryColor', {
+                label: 'secondary-ui',
+                view: 'color'
+            })
+            .on('change', syncToStore);
+        interfaceFolder
+            .addBinding(localParams, 'uiBackgroundColor', {
+                label: 'background-ui',
+                view: 'color'
+            })
+            .on('change', syncToStore);
+
+        const settingsFolder = editorPane.addFolder({ title: 'VISUALS' });
         settingsFolder
             .addBinding(localParams, 'themePreset', {
                 label: 'theme',
@@ -499,7 +528,12 @@
             localParams.showOverlayLines = p.showOverlayLines;
             localParams.impactSensitivity = p.impactSensitivity;
             localParams.impactFlash = p.impactFlash;
-            localParams.impactFrame = p.impactFrame;
+            localParams.solidOpacity = p.solidOpacity;
+            localParams.solidBackfaceCulling = p.solidBackfaceCulling;
+            localParams.uiThemeMode = p.uiThemeMode;
+            localParams.uiPrimaryColor = p.uiPrimaryColor;
+            localParams.uiSecondaryColor = p.uiSecondaryColor;
+            localParams.uiBackgroundColor = p.uiBackgroundColor;
             // No rebuild on every params update to avoid disposing the active view repeatedly
             // refreshPane();
         });
@@ -643,7 +677,7 @@
         box-sizing: border-box;
         background: var(--ui-panel-bg) !important;
         border: 1px solid var(--ui-panel-border);
-        color: var(--ui-text) !important;
+        color: var(--ui-editor-text) !important;
         scrollbar-width: thin;
         scrollbar-color: var(--ui-scroll-thumb) var(--ui-scroll-track);
     }
@@ -668,7 +702,7 @@
     :global(.tp-fldv_t),
     :global(.tp-btnv_t) {
         font-family: 'Courier New', monospace !important;
-        color: var(--ui-text) !important;
+        color: var(--ui-editor-text) !important;
     }
 
     .meters-panel {

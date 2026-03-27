@@ -59,6 +59,10 @@ export interface VisualParams {
     disableBassRebound: boolean;
     solidOpacity: number;
     solidBackfaceCulling: boolean;
+    uiThemeMode: ThemeMode;
+    uiPrimaryColor: string;
+    uiSecondaryColor: string;
+    uiBackgroundColor: string;
 }
 
 export type VisualPresetMap = Record<string, VisualParams>;
@@ -116,7 +120,11 @@ export const defaultVisualParams: VisualParams = {
     impactFrame: 1,
     disableBassRebound: false,
     solidOpacity: 1.0,
-    solidBackfaceCulling: true
+    solidBackfaceCulling: true,
+    uiThemeMode: 'dark',
+    uiPrimaryColor: '#ffffff',
+    uiSecondaryColor: '#9f9f9f',
+    uiBackgroundColor: '#121212'
 };
 
 const DEFAULT_PRESETS: VisualPresetMap = {
@@ -302,7 +310,11 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame,
         disableBassRebound: typeof value?.disableBassRebound === 'boolean' ? value.disableBassRebound : defaultVisualParams.disableBassRebound,
         solidOpacity: typeof value?.solidOpacity === 'number' ? value.solidOpacity : defaultVisualParams.solidOpacity,
-        solidBackfaceCulling: typeof value?.solidBackfaceCulling === 'boolean' ? value.solidBackfaceCulling : defaultVisualParams.solidBackfaceCulling
+        solidBackfaceCulling: typeof value?.solidBackfaceCulling === 'boolean' ? value.solidBackfaceCulling : defaultVisualParams.solidBackfaceCulling,
+        uiThemeMode: isThemeMode(value?.uiThemeMode) ? value.uiThemeMode : defaultVisualParams.uiThemeMode,
+        uiPrimaryColor: typeof value?.uiPrimaryColor === 'string' ? value.uiPrimaryColor : defaultVisualParams.uiPrimaryColor,
+        uiSecondaryColor: typeof value?.uiSecondaryColor === 'string' ? value.uiSecondaryColor : defaultVisualParams.uiSecondaryColor,
+        uiBackgroundColor: typeof value?.uiBackgroundColor === 'string' ? value.uiBackgroundColor : defaultVisualParams.uiBackgroundColor
     };
 }
 

@@ -5,6 +5,7 @@
     let collapsed = $state(true);
     let dragOver = $state(false);
     let draggedIndex = $state<number | null>(null);
+    let footerOpen = $state(false);
 
     function handleDrop(e: DragEvent) {
         e.preventDefault();
@@ -145,21 +146,35 @@
             </main>
 
             <footer class="sidebar-footer">
-                <details class="info-panel">
-                    <summary>
+                <button class="footer-toggle" onclick={() => footerOpen = !footerOpen}>
+                    <div class="toggle-label">
                         <svg class="info-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                         </svg>
-                        INFO
-                    </summary>
-                    <p>Load audio files by dragging and dropping or clicking the dropzone. Reorder tracks with drag and drop, click any track to play it instantly. Use the live editor panel to adjust visual parameters in real-time and shape the audio-reactive experience.</p>
-                </details>
-                <a class="github-link" href="https://github.com/deveduar" target="_blank" rel="noreferrer">
-                    <svg class="github-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-                    </svg>
-                    DEVEDUAR
-                </a>
+                        <span>INFO / AUTHOR</span>
+                    </div>
+                    <span class="chevron" class:open={footerOpen}>▾</span>
+                </button>
+
+                {#if footerOpen}
+                    <div class="footer-panel">
+                        <div class="info-section">
+                            <div class="info-header">
+                                <span>VERSION 1.2 / STABLE</span>
+                            </div>
+                            <p class="info-text">
+                                Drag & drop tracks to load them. Reorder any time. Use the Live Editor to shape your visuals. Designed for creative live performances.
+                            </p>
+                        </div>
+
+                        <a class="github-link" href="https://github.com/deveduar" target="_blank" rel="noreferrer">
+                            <svg class="github-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                            </svg>
+                            <span>AUTHOR: DEVEDUAR</span>
+                        </a>
+                    </div>
+                {/if}
             </footer>
         </div>
     {/if}
@@ -170,7 +185,7 @@
         position: fixed;
         left: 0;
         top: 0;
-        bottom: 80px;
+        bottom: 0;
         width: 280px;
         background: var(--ui-panel-bg);
         backdrop-filter: blur(10px);
@@ -388,56 +403,106 @@
 
     .sidebar-footer {
         flex-shrink: 0;
+        margin-top: auto;
         padding-top: 14px;
+        padding-bottom: 84px;
         border-top: 1px solid var(--ui-panel-border);
-        display: grid;
-        gap: 12px;
     }
-
-    .info-panel {
-        background: color-mix(in srgb, var(--ui-bg) 70%, transparent);
-        border: 1px solid var(--ui-panel-border);
-        padding: 10px 12px;
-    }
-
-    .info-panel summary {
+    
+    .footer-toggle {
+        width: 100%;
+        background: none;
+        border: none;
+        color: var(--ui-text);
+        padding: 10px 0;
         cursor: pointer;
-        font-size: 11px;
-        letter-spacing: 0.16em;
-        list-style: none;
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: space-between;
+        opacity: 0.6;
+        transition: opacity 0.2s;
     }
 
-    .info-panel summary::-webkit-details-marker {
-        display: none;
+    .footer-toggle:hover {
+        opacity: 1;
     }
 
+    .toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        font-weight: bold;
+    }
+
+    .chevron {
+        font-size: 12px;
+        transition: transform 0.3s;
+    }
+
+    .chevron.open {
+        transform: rotate(180deg);
+    }
+    
+    .footer-panel {
+        background: color-mix(in srgb, var(--ui-panel-bg) 80%, #fff 2%);
+        border: 1px solid var(--ui-panel-border);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: background 0.2s;
+    }
+    
+    .footer-panel:hover {
+        background: color-mix(in srgb, var(--ui-panel-bg) 95%, var(--ui-accent) 5%);
+    }
+
+    .info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .info-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        font-weight: bold;
+        color: var(--ui-accent);
+    }
+    
     .info-icon {
         flex-shrink: 0;
     }
 
-    .info-panel p {
-        margin: 10px 0 0;
+    .info-text {
+        margin: 0;
         font-size: 11px;
-        line-height: 1.5;
-        opacity: 0.75;
+        line-height: 1.4;
+        opacity: 0.65;
     }
 
     .github-link {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         color: var(--ui-text);
         text-decoration: none;
         font-size: 10px;
-        letter-spacing: 0.16em;
-        opacity: 0.65;
+        letter-spacing: 0.1em;
+        opacity: 0.55;
+        transition: opacity 0.2s, color 0.2s;
+        padding-top: 8px;
+        border-top: 1px solid color-mix(in srgb, var(--ui-panel-border) 40%, transparent);
     }
 
     .github-link:hover {
         opacity: 1;
+        color: var(--ui-accent);
     }
 
     .github-icon {

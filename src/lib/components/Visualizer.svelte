@@ -34,25 +34,26 @@
     }
 
     const themeVars = $derived.by(() => {
-        const dark = $params.themeMode === 'dark';
+        const dark = $params.uiThemeMode === 'dark';
         const text = dark ? '#f6f6f6' : '#0e0e0e';
-        const muted = dark ? rgba($params.secondaryColor, 0.7) : rgba($params.secondaryColor, 0.82);
-        const panelBg = $params.backgroundColor;
-        const panelBorder = dark ? rgba($params.primaryColor, 0.18) : rgba($params.secondaryColor, 0.24);
-        const trackBg = dark ? rgba($params.primaryColor, 0.08) : rgba($params.secondaryColor, 0.12);
-        const scrollTrack = dark ? rgba($params.primaryColor, 0.08) : rgba($params.secondaryColor, 0.08);
-        const scrollThumb = dark ? rgba($params.primaryColor, 0.34) : rgba($params.secondaryColor, 0.34);
-        const scrollThumbSoft = dark ? rgba($params.secondaryColor, 0.22) : rgba($params.primaryColor, 0.22);
+        const muted = dark ? rgba($params.uiSecondaryColor, 0.7) : rgba($params.uiSecondaryColor, 0.82);
+        const panelBg = $params.uiBackgroundColor;
+        const panelBorder = dark ? rgba($params.uiPrimaryColor, 0.18) : rgba($params.uiSecondaryColor, 0.24);
+        const trackBg = dark ? rgba($params.uiPrimaryColor, 0.08) : rgba($params.uiSecondaryColor, 0.12);
+        const scrollTrack = dark ? rgba($params.uiPrimaryColor, 0.08) : rgba($params.uiSecondaryColor, 0.08);
+        const scrollThumb = dark ? rgba($params.uiPrimaryColor, 0.34) : rgba($params.uiSecondaryColor, 0.34);
+        const scrollThumbSoft = dark ? rgba($params.uiSecondaryColor, 0.22) : rgba($params.uiPrimaryColor, 0.22);
 
         return [
             `--ui-bg:${$params.backgroundColor}`,
             `--ui-text:${text}`,
+            `--ui-editor-text:#f0f0f0`,
             `--ui-muted:${muted}`,
             `--ui-panel-bg:${panelBg}`,
             `--ui-panel-border:${panelBorder}`,
             `--ui-track-bg:${trackBg}`,
-            `--ui-accent:${$params.primaryColor}`,
-            `--ui-accent-soft:${$params.secondaryColor}`,
+            `--ui-accent:${$params.uiPrimaryColor}`,
+            `--ui-accent-soft:${$params.uiSecondaryColor}`,
             `--ui-scroll-track:${scrollTrack}`,
             `--ui-scroll-thumb:${scrollThumb}`,
             `--ui-scroll-thumb-soft:${scrollThumbSoft}`

@@ -167,7 +167,9 @@
         left: 0;
         right: 0;
         padding: 0;
-        background: linear-gradient(transparent, color-mix(in srgb, var(--ui-bg) 92%, #000 8%));
+        background: var(--ui-panel-bg);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid var(--ui-panel-border);
         color: var(--ui-text);
         font-family: 'Courier New', monospace;
         z-index: 100;
