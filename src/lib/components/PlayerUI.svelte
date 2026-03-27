@@ -271,7 +271,7 @@
 
     .play-btn {
         background: var(--ui-accent);
-        color: var(--ui-bg);
+        color: var(--ui-accent-soft);
         border: none;
         width: 52px;
         height: 44px;

@@ -76,6 +76,15 @@
         localParams.backgroundColor = palette.backgroundColor;
     }
 
+    function applyUIThemePreset(preset: ThemePreset) {
+        const palette = getThemePalette(preset);
+        localParams.uiThemePreset = preset;
+        localParams.uiThemeMode = palette.themeMode;
+        localParams.uiPrimaryColor = palette.primaryColor;
+        localParams.uiSecondaryColor = palette.secondaryColor;
+        localParams.uiBackgroundColor = palette.backgroundColor;
+    }
+
     function rebuildPane() {
         try {
             pane?.dispose();
@@ -132,18 +141,6 @@
                 .on('change', () => {
                     setTimeout(() => rebuildPane(), 0);
                 });
-
-            if (localParams.renderMode === 'solid') {
-                viewFolder
-                    .addBinding(localParams, 'solidOpacity', { label: 'solid opacity', min: 0.1, max: 1.0, step: 0.05 })
-                    .on('change', syncToStore);
-
-                viewFolder
-                    .addBinding(localParams, 'solidBackfaceCulling', { label: 'solid culling' })
-                    .on('change', syncToStore);
-            }
-
-
         } else if (localParams.displayMode === 'waveform') {
             viewFolder
                 .addBinding(localParams, 'waveformStyle', {
@@ -159,8 +156,23 @@
 
         const interfaceFolder = editorPane.addFolder({ title: 'INTERFACE' });
         interfaceFolder
-            .addBinding(localParams, 'uiThemeMode', {
+            .addBinding(localParams, 'uiThemePreset', {
                 label: 'theme-ui',
+                options: {
+                    Mono: 'mono',
+                    Sunset: 'sunset',
+                    Ice: 'ice',
+                    Acid: 'acid'
+                }
+            })
+            .on('change', (event: TpChangeEvent<ThemePreset>) => {
+                applyUIThemePreset(event.value as ThemePreset);
+                syncToStore();
+                refreshPane();
+            });
+        interfaceFolder
+            .addBinding(localParams, 'uiThemeMode', {
+                label: 'mode-ui',
                 options: {
                     Dark: 'dark',
                     Light: 'light'
@@ -185,7 +197,16 @@
                 view: 'color'
             })
             .on('change', syncToStore);
-
+        interfaceFolder
+            .addBinding(localParams, 'showMeters', {
+                label: 'meters'
+            })
+            .on('change', syncToStore);
+        interfaceFolder
+            .addBinding(localParams, 'showBands', {
+                label: 'bands'
+            })
+            .on('change', syncToStore);
         const settingsFolder = editorPane.addFolder({ title: 'VISUALS' });
         settingsFolder
             .addBinding(localParams, 'themePreset', {
@@ -202,15 +223,6 @@
                 syncToStore();
                 refreshPane();
             });
-        settingsFolder
-            .addBinding(localParams, 'themeMode', {
-                label: 'mode',
-                options: {
-                    Dark: 'dark',
-                    Light: 'light'
-                }
-            })
-            .on('change', syncToStore);
         settingsFolder
             .addBinding(localParams, 'primaryColor', {
                 label: 'primary',
@@ -316,13 +328,29 @@
 
             if (localParams.displayMode === 'sphere') {
                 geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
+
+                if (localParams.renderMode === 'solid') {
+                    geomFolder
+                        .addBinding(localParams, 'solidOpacity', {
+                            label: 'solid opacity',
+                            min: 0.1,
+                            max: 1.0,
+                            step: 0.05
+                        })
+                        .on('change', syncToStore);
+
+                    geomFolder
+                        .addBinding(localParams, 'solidBackfaceCulling', { label: 'solid culling' })
+                        .on('change', syncToStore);
+                }
             }
 
-            geomFolder
-                .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
-                .on('change', syncToStore);
+            if (localParams.renderMode === 'wireframe') {
+                geomFolder
+                    .addBinding(localParams, 'wireframeOpacity', { min: 0.1, max: 1, step: 0.05 })
+                    .on('change', syncToStore);
+            }
         }
-
         if (localParams.displayMode === 'sphere') {
             const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
             cameraFolder
@@ -351,25 +379,14 @@
             cameraFolder
                 .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
                 .on('change', syncToStore);
+            cameraFolder
+                .addBinding(localParams, 'disableBassRebound', {
+                    label: 'freeze audio'
+                })
+                .on('change', syncToStore);
             cameraFolder.addButton({ title: 'RESET CAMERA' }).on('click', handleResetCamera);
         }
 
-        const audioFolder = editorPane.addFolder({ title: 'AUDIO' });
-        audioFolder
-            .addBinding(localParams, 'showMeters', {
-                label: 'meters'
-            })
-            .on('change', syncToStore);
-        audioFolder
-            .addBinding(localParams, 'showBands', {
-                label: 'bands'
-            })
-            .on('change', syncToStore);
-        audioFolder
-            .addBinding(localParams, 'disableBassRebound', {
-                label: 'freeze audio'
-            })
-            .on('change', syncToStore);
 
         const overlayFolder = editorPane.addFolder({ title: 'OVERLAY' });
         overlayFolder
@@ -531,6 +548,7 @@
             localParams.solidOpacity = p.solidOpacity;
             localParams.solidBackfaceCulling = p.solidBackfaceCulling;
             localParams.uiThemeMode = p.uiThemeMode;
+            localParams.uiThemePreset = p.uiThemePreset;
             localParams.uiPrimaryColor = p.uiPrimaryColor;
             localParams.uiSecondaryColor = p.uiSecondaryColor;
             localParams.uiBackgroundColor = p.uiBackgroundColor;

@@ -60,6 +60,7 @@ export interface VisualParams {
     solidOpacity: number;
     solidBackfaceCulling: boolean;
     uiThemeMode: ThemeMode;
+    uiThemePreset: ThemePreset;
     uiPrimaryColor: string;
     uiSecondaryColor: string;
     uiBackgroundColor: string;
@@ -122,6 +123,7 @@ export const defaultVisualParams: VisualParams = {
     solidOpacity: 1.0,
     solidBackfaceCulling: true,
     uiThemeMode: 'dark',
+    uiThemePreset: 'mono',
     uiPrimaryColor: '#ffffff',
     uiSecondaryColor: '#9f9f9f',
     uiBackgroundColor: '#121212'
@@ -312,8 +314,12 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         solidOpacity: typeof value?.solidOpacity === 'number' ? value.solidOpacity : defaultVisualParams.solidOpacity,
         solidBackfaceCulling: typeof value?.solidBackfaceCulling === 'boolean' ? value.solidBackfaceCulling : defaultVisualParams.solidBackfaceCulling,
         uiThemeMode: isThemeMode(value?.uiThemeMode) ? value.uiThemeMode : defaultVisualParams.uiThemeMode,
+        uiThemePreset: isThemePreset(value?.uiThemePreset) ? value.uiThemePreset : defaultVisualParams.uiThemePreset,
         uiPrimaryColor: typeof value?.uiPrimaryColor === 'string' ? value.uiPrimaryColor : defaultVisualParams.uiPrimaryColor,
-        uiSecondaryColor: typeof value?.uiSecondaryColor === 'string' ? value.uiSecondaryColor : defaultVisualParams.uiSecondaryColor,
+        uiSecondaryColor:
+            typeof value?.uiSecondaryColor === 'string'
+                ? value.uiSecondaryColor
+                : defaultVisualParams.uiSecondaryColor,
         uiBackgroundColor: typeof value?.uiBackgroundColor === 'string' ? value.uiBackgroundColor : defaultVisualParams.uiBackgroundColor
     };
 }
