@@ -23,9 +23,11 @@
         exportPresets,
         importPresets,
         resetParams,
-        getThemePalette
+        getThemePalette,
+        sharedCameraZoom
     } from '$lib/stores/params';
     import { bass, dbLevel, lufs, mid, transient, treble, sidebarOpen } from '$lib/stores/playlistStore';
+    import { get } from 'svelte/store';
 
     type EditorPane = FolderApi & {
         refresh: () => void;
@@ -54,6 +56,17 @@
         // General sync for all params
         params.set({ ...localParams });
     }
+
+    const zoomProxy = {
+        get level() { return get(sharedCameraZoom); },
+        set level(v) { sharedCameraZoom.set(v); }
+    };
+
+    $effect(() => {
+        // Trigger Tweakpane refresh when zoom updates externally
+        const _z = $sharedCameraZoom;
+        if (pane) pane.refresh();
+    });
 
     function refreshPresetNames(preferred?: string) {
         presetNames = getPresetNames();
@@ -206,6 +219,11 @@
         interfaceFolder
             .addBinding(localParams, 'showBands', {
                 label: 'bands'
+            })
+            .on('change', syncToStore);
+        interfaceFolder
+            .addBinding(localParams, 'showZoomControl', {
+                label: 'zoom UI'
             })
             .on('change', syncToStore);
         const settingsFolder = editorPane.addFolder({ title: 'VISUALS' });
@@ -370,10 +388,12 @@
                 .on('change', syncToStore);
             cameraFolder
                 .addBinding(localParams, 'cameraDamping', { label: 'damping', min: 0.02, max: 0.9, step: 0.01 })
+            cameraFolder
+                .addBinding(localParams, 'cameraEnableZoom', { label: 'enable zoom' })
                 .on('change', syncToStore);
             cameraFolder
-                .addBinding(localParams, 'cameraEnableZoom', { label: 'zoom' })
-                .on('change', syncToStore);
+                .addBinding(zoomProxy, 'level', { label: 'zoom', min: 0.1, max: 20.0, step: 0.1 })
+                .on('change', () => pane?.refresh());
             cameraFolder
                 .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
                 .on('change', syncToStore);

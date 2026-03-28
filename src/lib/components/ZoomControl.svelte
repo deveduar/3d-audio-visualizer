@@ -1,8 +1,8 @@
 <script lang="ts">
     import { sharedCameraZoom, params } from '$lib/stores/params';
 
-    const min = 0.3;
-    const max = 3.0;
+    const min = 0.1;
+    const max = 30.0;
 
     function handleInput(e: Event) {
         if (!$params.cameraEnableZoom) return;
@@ -27,6 +27,7 @@
     });
 </script>
 
+{#if $params.showZoomControl}
 <div 
     class="zoom-control {$params.cameraEnableZoom ? '' : 'zoom-disabled'}" 
     onwheel={handleWheel}
@@ -47,12 +48,13 @@
     </div>
     <div class="zoom-value">{$sharedCameraZoom.toFixed(2)}x</div>
 </div>
+{/if}
 
 <style>
     .zoom-control {
         position: absolute;
-        right: 310px;
-        top: 50%;
+        left: 30px;
+        top: 60%;
         transform: translateY(-50%);
         display: flex;
         flex-direction: column;

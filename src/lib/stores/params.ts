@@ -51,6 +51,7 @@ export interface VisualParams {
     baseRadius: number;
     showMeters: boolean;
     showBands: boolean;
+    showZoomControl: boolean;
     showImpactOverlay: boolean;
     showOverlayLines: boolean;
     impactSensitivity: number;
@@ -114,6 +115,7 @@ export const defaultVisualParams: VisualParams = {
     baseRadius: 20,
     showMeters: true,
     showBands: true,
+    showZoomControl: true,
     showImpactOverlay: false,
     showOverlayLines: false,
     impactSensitivity: 0.08,
@@ -305,6 +307,7 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         baseRadius: typeof value?.baseRadius === 'number' ? value.baseRadius : defaultVisualParams.baseRadius,
         showMeters: typeof value?.showMeters === 'boolean' ? value.showMeters : defaultVisualParams.showMeters,
         showBands: typeof value?.showBands === 'boolean' ? value.showBands : defaultVisualParams.showBands,
+        showZoomControl: typeof value?.showZoomControl === 'boolean' ? value.showZoomControl : defaultVisualParams.showZoomControl,
         showImpactOverlay: typeof value?.showImpactOverlay === 'boolean' ? value.showImpactOverlay : defaultVisualParams.showImpactOverlay,
         showOverlayLines: typeof value?.showOverlayLines === 'boolean' ? value.showOverlayLines : defaultVisualParams.showOverlayLines,
         impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,

@@ -20,7 +20,7 @@
         const step = 0.05;
         sharedCameraZoom.update(z => {
             const next = z + (e.deltaY < 0 ? step : -step);
-            return Math.max(0.3, Math.min(3.0, next));
+            return Math.max(0.1, Math.min(30.0, next));
         });
     }
 
