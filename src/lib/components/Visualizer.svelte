@@ -81,7 +81,7 @@
 <div class="visualizer" style={themeVars}>
     {#if $params.displayMode === 'sphere' || $params.displayMode === 'tunnel'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div style="position:absolute;inset:0" onwheel={handleCanvasWheel}>
+        <div style="position:absolute;inset:0;touch-action:none;" onwheel={handleCanvasWheel}>
             <Canvas>
                 <Scene />
             </Canvas>

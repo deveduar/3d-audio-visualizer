@@ -58,8 +58,8 @@
     }
 
     const zoomProxy = {
-        get level() { return get(sharedCameraZoom); },
-        set level(v) { sharedCameraZoom.set(v); }
+        get level() { return Math.log10(get(sharedCameraZoom)); },
+        set level(v) { sharedCameraZoom.set(Math.pow(10, v)); }
     };
 
     $effect(() => {
@@ -397,7 +397,13 @@
                 .addBinding(localParams, 'cameraEnableZoom', { label: 'enable zoom' })
                 .on('change', syncToStore);
             cameraFolder
-                .addBinding(zoomProxy, 'level', { label: 'zoom', min: 0.1, max: 20.0, step: 0.1 })
+                .addBinding(zoomProxy, 'level', {
+                    label: 'zoom',
+                    min: Math.log10(0.1),
+                    max: Math.log10(30.0),
+                    step: 0.01,
+                    format: (v: number) => Math.pow(10, v).toFixed(1) + 'x'
+                })
                 .on('change', () => pane?.refresh());
             cameraFolder
                 .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
@@ -682,11 +688,9 @@
 
     .editor {
         pointer-events: auto;
-        min-height: 100%;
     }
 
     .editor-scroll {
-        height: 100%;
         max-height: 100%;
         overflow-y: auto;
         overflow-x: hidden;
@@ -867,7 +871,6 @@
 
         :global(.tp-dfwv) {
             max-height: 100%;
-            height: 100%;
             overflow-y: auto !important;
         }
 

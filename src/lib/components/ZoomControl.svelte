@@ -65,7 +65,7 @@
         flex-direction: column;
         align-items: center;
         gap: 12px;
-        z-index: 2000;
+        z-index: 110;
         pointer-events: auto;
         user-select: none;
         transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
