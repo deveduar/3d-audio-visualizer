@@ -1,45 +1,50 @@
 <script lang="ts">
+    import { sidebarOpen } from '$lib/stores/playlistStore';
     import { sharedCameraZoom, params } from '$lib/stores/params';
 
     const min = 0.1;
     const max = 30.0;
 
+    const logMin = Math.log10(min);
+    const logMax = Math.log10(max);
+
     function handleInput(e: Event) {
         if (!$params.cameraEnableZoom) return;
         const val = parseFloat((e.target as HTMLInputElement).value);
-        sharedCameraZoom.set(val);
+        sharedCameraZoom.set(Math.pow(10, val));
     }
 
     function handleWheel(e: WheelEvent) {
         if (!$params.cameraEnableZoom) return;
         e.stopPropagation();
         e.preventDefault();
-        const step = 0.05;
         sharedCameraZoom.update(z => {
+            const step = z * 0.1;
             const next = z + (e.deltaY < 0 ? step : -step);
             return Math.max(min, Math.min(max, next));
         });
     }
 
     const percent = $derived.by(() => {
-        const p = (($sharedCameraZoom - min) / (max - min)) * 100;
+        const currentLog = Math.log10($sharedCameraZoom);
+        const p = ((currentLog - logMin) / (logMax - logMin)) * 100;
         return Math.max(0, Math.min(100, p));
     });
 </script>
 
 {#if $params.showZoomControl}
 <div 
-    class="zoom-control {$params.cameraEnableZoom ? '' : 'zoom-disabled'}" 
+    class="zoom-control {$params.cameraEnableZoom ? '' : 'zoom-disabled'} {$sidebarOpen ? 'sidebar-open' : ''}" 
     onwheel={handleWheel}
 >
     <div class="zoom-label">ZOOM</div>
     <div class="slider-container">
         <input 
             type="range" 
-            {min} 
-            {max} 
-            step="0.01" 
-            value={$sharedCameraZoom} 
+            min={logMin} 
+            max={logMax} 
+            step="0.001" 
+            value={Math.log10($sharedCameraZoom)} 
             oninput={handleInput}
             class="vertical-slider"
             style="--percent: {percent}%"
@@ -63,6 +68,11 @@
         z-index: 2000;
         pointer-events: auto;
         user-select: none;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .zoom-control.sidebar-open {
+        left: 326px; /* Offset to slide past sidebar */
     }
 
     .zoom-label {
