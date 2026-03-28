@@ -57,7 +57,9 @@ export interface VisualParams {
     impactSensitivity: number;
     impactFlash: number;
     impactFrame: number;
-    disableBassRebound: boolean;
+    audioReactAmount: number;
+    geometryBounce: number;
+    autoRotate: boolean;
     solidOpacity: number;
     solidBackfaceCulling: boolean;
     uiThemeMode: ThemeMode;
@@ -121,7 +123,9 @@ export const defaultVisualParams: VisualParams = {
     impactSensitivity: 0.08,
     impactFlash: 0.9,
     impactFrame: 1,
-    disableBassRebound: false,
+    audioReactAmount: 1.0,
+    geometryBounce: 1.0,
+    autoRotate: true,
     solidOpacity: 1.0,
     solidBackfaceCulling: true,
     uiThemeMode: 'dark',
@@ -313,7 +317,9 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         impactSensitivity: typeof value?.impactSensitivity === 'number' ? value.impactSensitivity : defaultVisualParams.impactSensitivity,
         impactFlash: typeof value?.impactFlash === 'number' ? value.impactFlash : defaultVisualParams.impactFlash,
         impactFrame: typeof value?.impactFrame === 'number' ? value.impactFrame : defaultVisualParams.impactFrame,
-        disableBassRebound: typeof value?.disableBassRebound === 'boolean' ? value.disableBassRebound : defaultVisualParams.disableBassRebound,
+        audioReactAmount: typeof value?.audioReactAmount === 'number' ? value.audioReactAmount : defaultVisualParams.audioReactAmount,
+        geometryBounce: typeof value?.geometryBounce === 'number' ? value.geometryBounce : defaultVisualParams.geometryBounce,
+        autoRotate: typeof value?.autoRotate === 'boolean' ? value.autoRotate : defaultVisualParams.autoRotate,
         solidOpacity: typeof value?.solidOpacity === 'number' ? value.solidOpacity : defaultVisualParams.solidOpacity,
         solidBackfaceCulling: typeof value?.solidBackfaceCulling === 'boolean' ? value.solidBackfaceCulling : defaultVisualParams.solidBackfaceCulling,
         uiThemeMode: isThemeMode(value?.uiThemeMode) ? value.uiThemeMode : defaultVisualParams.uiThemeMode,

@@ -186,7 +186,7 @@
 
         gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), canvas.width, canvas.height);
         gl.uniform1f(gl.getUniformLocation(program, 'uTime'), time);
-        const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+        const audioMultiplier = $params.audioReactAmount;
         gl.uniform1f(gl.getUniformLocation(program, 'uBass'), $bass * audioMultiplier);
         gl.uniform1f(gl.getUniformLocation(program, 'uMid'), $mid * audioMultiplier);
         gl.uniform1f(gl.getUniformLocation(program, 'uTreble'), $treble * audioMultiplier);

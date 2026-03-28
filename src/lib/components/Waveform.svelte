@@ -45,7 +45,7 @@
         ctx.fillRect(0, 0, width, height);
         ctx.save();
 
-        const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+        const audioMultiplier = $params.audioReactAmount;
 
         if (points.length > 0) {
             const style = $params.waveformStyle;
@@ -106,7 +106,7 @@
 
             ctx.shadowBlur = 0;
         } else {
-            const audioMultiplier = $params.disableBassRebound ? 0 : 1;
+            const audioMultiplier = $params.audioReactAmount;
             const amplitude = ($isPlaying ? $rms : 0.02) * audioMultiplier * height * 0.35;
             ctx.beginPath();
             ctx.moveTo(0, centerY);

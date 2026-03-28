@@ -176,7 +176,7 @@
         material.uniforms.uTime.value += delta;
         material.uniforms.uTrackTime.value = trackTime;
         material.uniforms.uTrackProgress.value = trackProgress;
-        const audioMultiplier = p.disableBassRebound ? 0 : 1;
+        const audioMultiplier = p.audioReactAmount;
         material.uniforms.uBass.value = get(bass) * audioMultiplier;
         material.uniforms.uMid.value = get(mid) * audioMultiplier;
         material.uniforms.uTreble.value = get(treble) * audioMultiplier;

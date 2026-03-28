@@ -171,12 +171,14 @@
         time += delta * p.noiseSpeed;
         const currentBass = get(bass);
         const currentTreble = get(treble);
-        const audioMultiplier = p.disableBassRebound ? 0 : 1;
-        rotation += delta * (0.08 + currentBass * 0.55 * audioMultiplier + currentTreble * 0.18 * audioMultiplier);
+        const audioMultiplier = p.audioReactAmount;
+        const autoRotateSpeed = p.autoRotate ? 0.08 : 0;
+        rotation += delta * (autoRotateSpeed + currentBass * 0.55 * audioMultiplier + currentTreble * 0.18 * audioMultiplier);
 
         const currentRms = Math.max(0.01, get(rms));
         const currentTransient = get(transient);
-        const targetScale = 0.48 + currentRms * 2.2 * audioMultiplier + currentBass * 0.45 * audioMultiplier + currentTransient * 0.85 * audioMultiplier;
+        const bounceMult = p.geometryBounce;
+        const targetScale = 0.48 + (currentRms * 2.2 + currentBass * 0.45 + currentTransient * 0.85) * audioMultiplier * bounceMult;
         scale = scale + (targetScale - scale) * 0.16;
         animScale += (1 - animScale) * 0.08;
 

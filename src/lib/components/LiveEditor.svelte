@@ -260,6 +260,9 @@
                 view: 'color'
             })
             .on('change', syncToStore);
+        settingsFolder
+            .addBinding(localParams, 'audioReactAmount', { label: 'audio react', min: 0, max: 2, step: 0.05 })
+            .on('change', syncToStore);
 
         if (localParams.displayMode === 'nebula') {
             const nebulaFolder = editorPane.addFolder({ title: 'NEBULA' });
@@ -344,6 +347,8 @@
             geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
             geomFolder.addBinding(localParams, 'noiseAmp', { min: 0, max: 50, step: 1 }).on('change', syncToStore);
             geomFolder.addBinding(localParams, 'noiseSpeed', { min: 0.1, max: 2, step: 0.1 }).on('change', syncToStore);
+            geomFolder.addBinding(localParams, 'geometryBounce', { label: 'bounce', min: 0, max: 5, step: 0.05 }).on('change', syncToStore);
+            geomFolder.addBinding(localParams, 'autoRotate', { label: 'auto-rotate' }).on('change', syncToStore);
 
             if (localParams.displayMode === 'sphere') {
                 geomFolder.addBinding(localParams, 'baseRadius', { min: 8, max: 36, step: 1 }).on('change', syncToStore);
@@ -396,11 +401,6 @@
                 .on('change', () => pane?.refresh());
             cameraFolder
                 .addBinding(localParams, 'cameraEnablePan', { label: 'pan' })
-                .on('change', syncToStore);
-            cameraFolder
-                .addBinding(localParams, 'disableBassRebound', {
-                    label: 'freeze audio'
-                })
                 .on('change', syncToStore);
             cameraFolder.addButton({ title: 'RESET CAMERA' }).on('click', handleResetCamera);
         }
@@ -563,6 +563,10 @@
             localParams.showOverlayLines = p.showOverlayLines;
             localParams.impactSensitivity = p.impactSensitivity;
             localParams.impactFlash = p.impactFlash;
+            localParams.impactFrame = p.impactFrame;
+            localParams.audioReactAmount = p.audioReactAmount;
+            localParams.geometryBounce = p.geometryBounce;
+            localParams.autoRotate = p.autoRotate;
             localParams.solidOpacity = p.solidOpacity;
             localParams.solidBackfaceCulling = p.solidBackfaceCulling;
             localParams.uiThemeMode = p.uiThemeMode;
