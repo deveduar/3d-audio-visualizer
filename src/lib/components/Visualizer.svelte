@@ -7,10 +7,22 @@
     import Waveform from './Waveform.svelte';
     import NebulaField from './NebulaField.svelte';
     import ImpactOverlay from './ImpactOverlay.svelte';
+    import ZoomControl from './ZoomControl.svelte';
     import { onDestroy } from 'svelte';
     import { cleanup as cleanupAudio } from '$lib/stores/audioEngine';
     import { cleanup as cleanupPlaylist } from '$lib/stores/playlistStore';
-    import { params } from '$lib/stores/params';
+    import { params, sharedCameraZoom } from '$lib/stores/params';
+
+    function handleCanvasWheel(e: WheelEvent) {
+        if (!$params.cameraEnableZoom) return;
+        
+        e.preventDefault();
+        const step = 0.05;
+        sharedCameraZoom.update(z => {
+            const next = z + (e.deltaY < 0 ? step : -step);
+            return Math.max(0.3, Math.min(3.0, next));
+        });
+    }
 
     function hexToRgb(hex: string) {
         const normalized = hex.replace('#', '');
@@ -68,9 +80,12 @@
 
 <div class="visualizer" style={themeVars}>
     {#if $params.displayMode === 'sphere' || $params.displayMode === 'tunnel'}
-        <Canvas>
-            <Scene />
-        </Canvas>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div style="position:absolute;inset:0" onwheel={handleCanvasWheel}>
+            <Canvas>
+                <Scene />
+            </Canvas>
+        </div>
     {/if}
     <ImpactOverlay />
     {#if $params.displayMode === 'waveform'}
@@ -81,6 +96,9 @@
     <Sidebar />
     <LiveEditor />
     <PlayerUI />
+    {#if $params.displayMode !== 'waveform' && $params.displayMode !== 'nebula'}
+        <ZoomControl />
+    {/if}
 </div>
 
 <style>

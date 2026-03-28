@@ -358,7 +358,7 @@ function writeStoredPresets(presets: VisualPresetMap): void {
 
 export const params = writable<VisualParams>({ ...defaultVisualParams });
 export const cameraResetSignal = writable(0);
-
+export const sharedCameraZoom = writable(1.0);
 export function getPresetMap(): VisualPresetMap {
     return readStoredPresets();
 }

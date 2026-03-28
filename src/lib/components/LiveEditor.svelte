@@ -51,6 +51,7 @@
     });
 
     function syncToStore() {
+        // General sync for all params
         params.set({ ...localParams });
     }
 
@@ -363,9 +364,6 @@
                         'Orbit+React': 'orbit-reactive'
                     }
                 })
-                .on('change', syncToStore);
-            cameraFolder
-                .addBinding(localParams, 'cameraDistance', { label: 'distance', min: 50, max: 400, step: 1 })
                 .on('change', syncToStore);
             cameraFolder
                 .addBinding(localParams, 'cameraReactiveAmount', { label: 'reactive', min: 0, max: 6, step: 0.1 })

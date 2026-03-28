@@ -3,7 +3,7 @@
     import { OrbitControls } from '@threlte/extras';
     import WireframeSphere from './WireframeSphere.svelte';
     import TunnelField from './TunnelField.svelte';
-    import { cameraResetSignal, params } from '$lib/stores/params';
+    import { params, cameraResetSignal, sharedCameraZoom } from '$lib/stores/params';
     import { bass, transient } from '$lib/stores/playlistStore';
     import { get } from 'svelte/store';
 
@@ -13,10 +13,12 @@
     let rigRotationZ = $state(0);
     let lightA = $state(1);
     let lightB = $state(0.5);
-    useTask((delta) => {
+
+    useTask(() => {
         const impact = get(transient);
         const low = get(bass);
         const p = get(params);
+
         if (p.displayMode === 'tunnel') {
             cameraX += (0 - cameraX) * 0.14;
             cameraY += (0 - cameraY) * 0.14;
@@ -43,25 +45,39 @@
         lightA += ((1 + low * 0.45 * audioMultiplier + eventIntensity * (1.3 + p.impactFlash)) - lightA) * 0.12;
         lightB += ((0.5 + eventIntensity * (0.7 + p.impactFrame * 0.55)) - lightB) * 0.12;
     });
+
+    let cameraRef: any = $state(null);
+
+    $effect(() => {
+        if (cameraRef) {
+            cameraRef.zoom = $sharedCameraZoom;
+            cameraRef.updateProjectionMatrix();
+        }
+    });
 </script>
 
 {#key $cameraResetSignal}
     <T.Group position={[cameraX, cameraY, cameraZ]} rotation.z={rigRotationZ}>
         <T.PerspectiveCamera
+            bind:ref={cameraRef}
             makeDefault
-            position={$params.displayMode === 'tunnel' ? [0, 0, 0] : [0, 0, $params.cameraDistance]}
             fov={$params.displayMode === 'tunnel' ? 78 : 60}
+            zoom={$sharedCameraZoom}
+            position.z={$params.cameraDistance}
         >
             <OrbitControls
                 target={[0, 0, 0]}
+                minDistance={10}
+                maxDistance={800}
                 enableRotate={
                     $params.displayMode !== 'tunnel' &&
                     ($params.cameraMode === 'orbit' || $params.cameraMode === 'orbit-reactive')
                 }
-                enableZoom={$params.displayMode !== 'tunnel' && $params.cameraEnableZoom}
+                enableZoom={false}
                 enablePan={$params.displayMode !== 'tunnel' && $params.cameraEnablePan}
                 enableDamping
-                dampingFactor={0.04 + $params.cameraDamping * 0.3}
+                dampingFactor={0.08}
+                rotateSpeed={0.8}
             />
         </T.PerspectiveCamera>
     </T.Group>
