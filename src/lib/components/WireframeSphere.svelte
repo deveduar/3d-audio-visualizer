@@ -173,7 +173,10 @@
         const currentTreble = get(treble);
         const audioMultiplier = p.audioReactAmount;
         const autoRotateSpeed = p.autoRotate ? 0.08 : 0;
-        rotation += delta * (autoRotateSpeed + currentBass * 0.55 * audioMultiplier + currentTreble * 0.18 * audioMultiplier);
+        
+        if (p.autoRotate) {
+            rotation += delta * (autoRotateSpeed + currentBass * 0.55 * audioMultiplier + currentTreble * 0.18 * audioMultiplier);
+        }
 
         const currentRms = Math.max(0.01, get(rms));
         const currentTransient = get(transient);

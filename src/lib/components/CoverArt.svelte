@@ -10,7 +10,8 @@
     let rotation = $state(0);
     let scale = $state(1);
 
-    const defaultCover = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    // A more visible placeholder (dark grey square with a simple pattern feel)
+    const defaultCover = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjMTExMTExIi8+CjxyZWN0IHg9IjEyOCIgeT0iMTI4IiB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgc3Ryb2tlPSIjMzMzMzMzIiBzdHJva2Utd2lkdGg9IjgiLz4KPC9zdmc+';
     
     // We use a reactive texture loader
     const texture = $derived.by(() => {
@@ -26,7 +27,11 @@
         // Rotation logic
         const autoRotateSpeed = p.autoRotate ? 0.05 : 0;
         const currentBass = get(bass);
-        rotation += delta * (autoRotateSpeed + currentBass * 0.4 * audioMultiplier);
+        
+        // Root rotation: only if autoRotate is enabled
+        if (p.autoRotate) {
+            rotation += delta * (autoRotateSpeed + currentBass * 0.4 * audioMultiplier);
+        }
 
         // Scale/Bounce logic
         const currentRms = Math.max(0, get(rms));
