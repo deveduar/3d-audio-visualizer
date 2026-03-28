@@ -131,7 +131,32 @@
 
     <div class="main">
         <div class="track-info">
-            <span class="track-name">{loading ? 'Loading...' : $currentTrack?.name || 'No track loaded'}</span>
+            <div class="marquee-container">
+                <div class="marquee-content" class:scrolling={($currentTrack?.title || $currentTrack?.name || '').length > 30}>
+                    <span class="track-name">
+                        {#if loading}
+                            Loading...
+                        {:else if $currentTrack}
+                            {$currentTrack.artist ? $currentTrack.artist + ' - ' : ''}{$currentTrack.title || $currentTrack.name}
+                        {:else}
+                            No track loaded
+                        {/if}
+                    </span>
+                    {#if $currentTrack?.bpm}
+                        <span class="bpm-tag">{$currentTrack.bpm} BPM</span>
+                    {/if}
+
+                    <!-- Duplicate for infinite scroll -->
+                    {#if ($currentTrack?.title || $currentTrack?.name || '').length > 30}
+                        <span class="track-name" aria-hidden="true" style="margin-left: 50px;">
+                            {$currentTrack?.artist ? $currentTrack.artist + ' - ' : ''}{$currentTrack?.title || $currentTrack?.name}
+                        </span>
+                        {#if $currentTrack?.bpm}
+                            <span class="bpm-tag" aria-hidden="true">{$currentTrack.bpm} BPM</span>
+                        {/if}
+                    {/if}
+                </div>
+            </div>
             <div class="time-display">
                 <span>{formatTime(displayTime)}</span>
                 <span class="separator">/</span>
@@ -220,15 +245,44 @@
     .track-info {
         flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+    }
+
+    .marquee-content {
+        display: inline-block;
+        padding-right: 50px;
+    }
+
+    .marquee-content.scrolling {
+        animation: marquee 15s linear infinite;
+    }
+
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
     }
 
     .track-name {
         font-size: 13px;
+        font-weight: bold;
         opacity: 0.9;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
+    }
+
+    .bpm-tag {
+        font-size: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 10px;
+        opacity: 0.7;
     }
 
     .time-display {

@@ -10,8 +10,12 @@
     let rotation = $state(0);
     let scale = $state(1);
 
-    // A more visible placeholder (dark grey square with a simple pattern feel)
-    const defaultCover = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjMTExMTExIi8+CjxyZWN0IHg9IjEyOCIgeT0iMTI4IiB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgc3Ryb2tlPSIjMzMzMzMzIiBzdHJva2Utd2lkdGg9IjgiLz4KPC9zdmc+';
+    // A white musical note SVG to use as a mask/icon
+    const iconSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTI1NiAxOTJWMzIwTTI1NiAzMjBDMjU2IDM0MiAyMzggMzYwIDIxNiAzNjBDMTk0IDM2MCAxNzYgMzQyIDE3NiAzMjBDMTk2IDI5OCAyMTQgMzIwIDIzNiAzMjBMMjU2IDE5MlpNMjU2IDE5MkwzMjAgMjI0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=';
+    const iconTexture = useTexture(iconSvg);
+    const defaultCover = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+
     
     // We use a reactive texture loader
     const texture = $derived.by(() => {
@@ -42,56 +46,96 @@
     });
 </script>
 
-{#await texture then tex}
-    <Float 
-        speed={1.5} 
-        rotationIntensity={0.5} 
-        floatIntensity={0.5}
-    >
+{#if $currentTrack?.coverUrl}
+    {#await texture then tex}
+        <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
+            <T.Group rotation.y={rotation} scale={scale}>
+                {#if $params.coverStyle === 'flat'}
+                    <T.Mesh bind:ref={mesh}>
+                        <T.PlaneGeometry args={[40, 40]} />
+                        <T.MeshStandardMaterial 
+                            map={tex} 
+                            side={THREE.DoubleSide}
+                            transparent={true}
+                            opacity={$params.solidOpacity}
+                        />
+                    </T.Mesh>
+                {:else}
+                    <!-- Box Mode: Body + Textured Faces -->
+                    <T.Group>
+                        <!-- Main Box Body -->
+                        <T.Mesh>
+                            <T.BoxGeometry args={[40, 40, 2]} />
+                            <T.MeshStandardMaterial color={$params.secondaryColor} opacity={$params.solidOpacity} transparent />
+                        </T.Mesh>
+                        <!-- Front Face -->
+                        <T.Mesh position.z={1.01}>
+                            <T.PlaneGeometry args={[39.8, 39.8]} />
+                            <T.MeshStandardMaterial map={tex} transparent opacity={$params.solidOpacity} />
+                        </T.Mesh>
+                        <!-- Back Face -->
+                        <T.Mesh position.z={-1.01} rotation.y={Math.PI}>
+                            <T.PlaneGeometry args={[39.8, 39.8]} />
+                            <T.MeshStandardMaterial map={tex} transparent opacity={$params.solidOpacity} />
+                        </T.Mesh>
+                    </T.Group>
+                {/if}
+            </T.Group>
+        </Float>
+    {/await}
+{:else}
+    <!-- Placeholder Mode with Reactive SVG Icon -->
+    <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
         <T.Group rotation.y={rotation} scale={scale}>
             {#if $params.coverStyle === 'flat'}
-                <T.Mesh bind:ref={mesh}>
+                <!-- Background -->
+                <T.Mesh>
                     <T.PlaneGeometry args={[40, 40]} />
-                    <T.MeshStandardMaterial 
-                        map={tex} 
-                        side={THREE.DoubleSide}
-                        transparent={true}
-                        opacity={$params.solidOpacity}
-                    />
+                    <T.MeshStandardMaterial color={$params.primaryColor} side={THREE.DoubleSide} />
                 </T.Mesh>
+                <!-- Icon -->
+                {#await iconTexture then tex}
+                    <T.Mesh position.z={0.1}>
+                        <T.PlaneGeometry args={[25, 25]} />
+                        <T.MeshStandardMaterial map={tex} transparent color={$params.secondaryColor} />
+                    </T.Mesh>
+                    <T.Mesh position.z={-0.1} rotation.y={Math.PI}>
+                        <T.PlaneGeometry args={[25, 25]} />
+                        <T.MeshStandardMaterial map={tex} transparent color={$params.secondaryColor} />
+                    </T.Mesh>
+                {/await}
             {:else}
-                <T.Mesh bind:ref={mesh}>
+                <!-- Box Body -->
+                <T.Mesh>
                     <T.BoxGeometry args={[40, 40, 2]} />
-                    <!-- Map to all sides, but primarily front/back -->
-                    <T.MeshStandardMaterial 
-                        map={tex} 
-                        transparent={true}
-                        opacity={$params.solidOpacity}
-                    />
+                    <T.MeshStandardMaterial color={$params.primaryColor} />
                 </T.Mesh>
+                
+                <!-- Front Icon -->
+                {#await iconTexture then tex}
+                    <T.Mesh position.z={1.01}>
+                        <T.PlaneGeometry args={[25, 25]} />
+                        <T.MeshStandardMaterial map={tex} transparent color={$params.secondaryColor} />
+                    </T.Mesh>
+                    <!-- Back Icon -->
+                    <T.Mesh position.z={-1.01} rotation.y={Math.PI}>
+                        <T.PlaneGeometry args={[25, 25]} />
+                        <T.MeshStandardMaterial map={tex} transparent color={$params.secondaryColor} />
+                    </T.Mesh>
+                {/await}
             {/if}
         </T.Group>
     </Float>
-{/await}
+{/if}
 
 {#await texture catch error}
-    <Float 
-        speed={1.5} 
-        rotationIntensity={0.5} 
-        floatIntensity={0.5}
-    >
+    <!-- Loading/Error Fallback -->
+    <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
         <T.Group rotation.y={rotation} scale={scale}>
-            {#if $params.coverStyle === 'flat'}
-                <T.Mesh>
-                    <T.PlaneGeometry args={[40, 40]} />
-                    <T.MeshStandardMaterial color="#333" />
-                </T.Mesh>
-            {:else}
-                <T.Mesh>
-                    <T.BoxGeometry args={[40, 40, 2]} />
-                    <T.MeshStandardMaterial color="#333" />
-                </T.Mesh>
-            {/if}
+            <T.Mesh>
+                <T.BoxGeometry args={[40, 40, 2]} />
+                <T.MeshStandardMaterial color="#333" />
+            </T.Mesh>
         </T.Group>
     </Float>
 {/await}

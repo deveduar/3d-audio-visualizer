@@ -4,7 +4,11 @@ import jsmediatags from 'jsmediatags';
 
 export interface Track {
     id: string;
-    name: string;
+    name: string; // Filename fallback
+    title?: string;
+    artist?: string;
+    album?: string;
+    bpm?: number;
     url: string;
     coverUrl?: string;
     customCover?: boolean;
@@ -38,39 +42,53 @@ export const currentTrack = derived(
 let objectUrls: string[] = [];
 let coverUrls: string[] = [];
 
-function extractCover(blob: Blob): Promise<string | undefined> {
+interface MetadataResult {
+    coverUrl?: string;
+    title?: string;
+    artist?: string;
+    album?: string;
+    bpm?: number;
+}
+
+function extractMetadata(blob: Blob): Promise<MetadataResult> {
     return new Promise((resolve) => {
         const timeout = setTimeout(() => {
             console.warn('Metadata extraction timed out');
-            resolve(undefined);
+            resolve({});
         }, 4000);
 
         try {
             jsmediatags.read(blob, {
                 onSuccess: (tag: any) => {
                     clearTimeout(timeout);
-                    const { picture } = tag.tags;
+                    const { picture, title, artist, album, TBPM } = tag.tags;
+                    const res: MetadataResult = { title, artist, album };
+                    
+                    // BPM extraction (ID3v2 TBPM frame)
+                    if (TBPM && TBPM.data) {
+                        res.bpm = parseInt(TBPM.data);
+                    }
+
                     if (picture) {
                         const { data, format } = picture;
                         const uint8 = new Uint8Array(data);
                         const coverBlob = new Blob([uint8], { type: format });
                         const url = URL.createObjectURL(coverBlob);
                         coverUrls.push(url);
-                        resolve(url);
-                    } else {
-                        resolve(undefined);
+                        res.coverUrl = url;
                     }
+                    resolve(res);
                 },
                 onError: (error: any) => {
                     clearTimeout(timeout);
                     console.warn('Metadata extraction error:', error);
-                    resolve(undefined);
+                    resolve({});
                 }
             });
         } catch (error) {
             clearTimeout(timeout);
             console.warn('JSmediatags crash:', error);
-            resolve(undefined);
+            resolve({});
         }
     });
 }
@@ -89,15 +107,15 @@ export async function loadStaticTracks(): Promise<void> {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const blob = await response.blob();
-                const coverUrl = await extractCover(blob);
+                const meta = await extractMetadata(blob);
                 
                 return {
                     id: crypto.randomUUID(),
                     name,
-                    url,
-                    coverUrl,
+                    ...meta,
                     duration: 0,
-                    blob
+                    blob,
+                    url
                 };
             } catch (err) {
                 console.warn(`Failed to load static track ${url}:`, err);
@@ -117,12 +135,12 @@ export async function loadStaticTracks(): Promise<void> {
 export async function addTracks(files: File[]): Promise<void> {
     const newTracks: Track[] = await Promise.all(
         files.map(async (file) => {
-            const coverUrl = await extractCover(file);
+            const meta = await extractMetadata(file);
             return {
                 id: crypto.randomUUID(),
                 name: file.name,
                 url: URL.createObjectURL(file),
-                coverUrl,
+                ...meta,
                 duration: 0,
                 blob: file
             };
