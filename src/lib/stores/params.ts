@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 
-export type DisplayMode = 'sphere' | 'waveform' | 'nebula' | 'tunnel';
+export type DisplayMode = 'sphere' | 'waveform' | 'nebula' | 'tunnel' | 'cover';
 export type GeometryType = 'icosahedron' | 'sphere' | 'torus' | 'cube' | 'dodecahedron' | 'cone' | 'cylinder';
 export type WaveformStyle = 'line' | 'bars' | 'mirror';
 export type RenderMode = 'wireframe' | 'solid';
@@ -11,12 +11,14 @@ export type ThemePreset = 'mono' | 'sunset' | 'ice' | 'acid';
 export type NebulaVariant = 'cloud' | 'vortex' | 'ribbons';
 export type TunnelVariant = 'rings' | 'helix' | 'pulse';
 export type GridRender = 'lines' | 'points' | 'bars';
+export type CoverStyle = 'flat' | 'box';
 
 export interface VisualParams {
     displayMode: DisplayMode;
     geometryType: GeometryType;
     renderMode: RenderMode;
     waveformStyle: WaveformStyle;
+    coverStyle: CoverStyle;
     cameraMode: CameraMode;
     cameraDistance: number;
     cameraReactiveAmount: number;
@@ -83,6 +85,7 @@ export const defaultVisualParams: VisualParams = {
     geometryType: 'icosahedron',
     renderMode: 'wireframe',
     waveformStyle: 'line',
+    coverStyle: 'box',
     cameraMode: 'orbit-reactive',
     cameraDistance: 120,
     cameraReactiveAmount: 0,
@@ -259,8 +262,12 @@ function isTunnelVariant(value: unknown): value is TunnelVariant {
     return value === 'rings' || value === 'helix' || value === 'pulse';
 }
 
-function isGridRender(value: unknown): value is GridRender {
-    return value === 'lines' || value === 'points' || value === 'bars';
+function isGridRender(value: any): value is GridRender {
+    return ['lines', 'points', 'bars'].includes(value);
+}
+
+function isCoverStyle(value: any): value is CoverStyle {
+    return ['flat', 'box'].includes(value);
 }
 
 function sanitizeParams(value: Partial<VisualParams> | null | undefined): VisualParams {
@@ -269,6 +276,7 @@ function sanitizeParams(value: Partial<VisualParams> | null | undefined): Visual
         geometryType: isGeometryType(value?.geometryType) ? value.geometryType : defaultVisualParams.geometryType,
         renderMode: isRenderMode(value?.renderMode) ? value.renderMode : defaultVisualParams.renderMode,
         waveformStyle: isWaveformStyle(value?.waveformStyle) ? value.waveformStyle : defaultVisualParams.waveformStyle,
+        coverStyle: isCoverStyle(value?.coverStyle) ? value.coverStyle : defaultVisualParams.coverStyle,
         cameraMode: isCameraMode(value?.cameraMode) ? value.cameraMode : defaultVisualParams.cameraMode,
         cameraDistance: typeof value?.cameraDistance === 'number' ? value.cameraDistance : defaultVisualParams.cameraDistance,
         cameraReactiveAmount:

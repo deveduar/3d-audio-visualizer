@@ -6,6 +6,7 @@
     import LiveEditor from './LiveEditor.svelte';
     import Waveform from './Waveform.svelte';
     import NebulaField from './NebulaField.svelte';
+    import CoverArt from './CoverArt.svelte';
     import ImpactOverlay from './ImpactOverlay.svelte';
     import ZoomControl from './ZoomControl.svelte';
     import { onDestroy } from 'svelte';
@@ -79,11 +80,14 @@
 </script>
 
 <div class="visualizer" style={themeVars}>
-    {#if $params.displayMode === 'sphere' || $params.displayMode === 'tunnel'}
+    {#if $params.displayMode === 'sphere' || $params.displayMode === 'tunnel' || $params.displayMode === 'cover'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div style="position:absolute;inset:0;touch-action:none;" onwheel={handleCanvasWheel}>
             <Canvas>
                 <Scene />
+                {#if $params.displayMode === 'cover'}
+                    <CoverArt />
+                {/if}
             </Canvas>
         </div>
     {/if}

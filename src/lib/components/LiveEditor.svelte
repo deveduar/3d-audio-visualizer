@@ -26,7 +26,10 @@
         getThemePalette,
         sharedCameraZoom
     } from '$lib/stores/params';
-    import { bass, dbLevel, lufs, mid, transient, treble, sidebarOpen } from '$lib/stores/playlistStore';
+    import { 
+        bass, dbLevel, lufs, mid, transient, treble, sidebarOpen, currentTrack,
+        updateTrackCover
+    } from '$lib/stores/playlistStore';
     import { get } from 'svelte/store';
 
     type EditorPane = FolderApi & {
@@ -36,6 +39,7 @@
 
     let container: HTMLDivElement;
     let importInput: HTMLInputElement;
+    let coverInput: HTMLInputElement;
     let pane: EditorPane | null = null;
     let dbValue = $state('-60.0');
     let lufsValue = $state('-60.0');
@@ -120,11 +124,15 @@
                         Geometry: 'sphere',
                         Waveform: 'waveform',
                         Nebula: 'nebula',
-                        Grid: 'tunnel'
+                        Grid: 'tunnel',
+                        Cover: 'cover'
                     }
                 })
             .on('change', () => {
                 syncToStore();
+                if (localParams.displayMode === 'tunnel' || localParams.displayMode === 'cover') {
+                    resetCameraView();
+                }
                 setTimeout(() => rebuildPane(), 0);
             });
 
@@ -342,6 +350,24 @@
             tunnelFolder
                 .addBinding(localParams, 'wireframeOpacity', { label: 'opacity', min: 0.1, max: 1, step: 0.05 })
                 .on('change', syncToStore);
+        } else if (localParams.displayMode === 'cover') {
+            const coverFolder = editorPane.addFolder({ title: 'COVER' });
+            coverFolder
+                .addBinding(localParams, 'coverStyle', {
+                    label: 'style',
+                    options: {
+                        Flat: 'flat',
+                        Box: 'box'
+                    }
+                })
+                .on('change', syncToStore);
+
+            coverFolder.addButton({ title: 'UPLOAD CUSTOM COVER' }).on('click', () => {
+                coverInput?.click();
+            });
+            
+            coverFolder.addBinding(localParams, 'geometryBounce', { label: 'bounce', min: 0, max: 5, step: 0.05 }).on('change', syncToStore);
+            coverFolder.addBinding(localParams, 'autoRotate', { label: 'auto-rotate' }).on('change', syncToStore);
         } else {
             const geomFolder = editorPane.addFolder({ title: 'GEOMETRY' });
             geomFolder.addBinding(localParams, 'noiseFreq', { min: 0.01, max: 0.5, step: 0.01 }).on('change', syncToStore);
@@ -375,7 +401,8 @@
                     .on('change', syncToStore);
             }
         }
-        if (localParams.displayMode === 'sphere') {
+        
+        if (['sphere', 'tunnel', 'cover'].includes(localParams.displayMode)) {
             const cameraFolder = editorPane.addFolder({ title: 'CAMERA' });
             cameraFolder
                 .addBinding(localParams, 'cameraMode', {
@@ -525,6 +552,16 @@
         target.value = '';
     }
 
+    function handleCoverUpload(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        const track = get(currentTrack);
+        if (file && track) {
+            updateTrackCover(track.id, file);
+        }
+        target.value = '';
+    }
+
     onMount(() => {
         const unsubParams = params.subscribe((p) => {
             localParams.displayMode = p.displayMode;
@@ -573,6 +610,7 @@
             localParams.audioReactAmount = p.audioReactAmount;
             localParams.geometryBounce = p.geometryBounce;
             localParams.autoRotate = p.autoRotate;
+            localParams.coverStyle = p.coverStyle;
             localParams.solidOpacity = p.solidOpacity;
             localParams.solidBackfaceCulling = p.solidBackfaceCulling;
             localParams.uiThemeMode = p.uiThemeMode;
@@ -671,6 +709,7 @@
         </div>
     {/if}
     <input bind:this={importInput} type="file" accept="application/json" onchange={handleImportPresets} hidden />
+    <input bind:this={coverInput} type="file" accept="image/*" onchange={handleCoverUpload} hidden />
 </div>
 
 <style>

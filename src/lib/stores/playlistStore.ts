@@ -1,9 +1,13 @@
 import { writable, derived, get } from 'svelte/store';
+// @ts-ignore
+import jsmediatags from 'jsmediatags';
 
 export interface Track {
     id: string;
     name: string;
     url: string;
+    coverUrl?: string;
+    customCover?: boolean;
     duration: number;
     blob: Blob;
 }
@@ -32,6 +36,44 @@ export const currentTrack = derived(
 );
 
 let objectUrls: string[] = [];
+let coverUrls: string[] = [];
+
+function extractCover(blob: Blob): Promise<string | undefined> {
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            console.warn('Metadata extraction timed out');
+            resolve(undefined);
+        }, 4000);
+
+        try {
+            jsmediatags.read(blob, {
+                onSuccess: (tag: any) => {
+                    clearTimeout(timeout);
+                    const { picture } = tag.tags;
+                    if (picture) {
+                        const { data, format } = picture;
+                        const uint8 = new Uint8Array(data);
+                        const coverBlob = new Blob([uint8], { type: format });
+                        const url = URL.createObjectURL(coverBlob);
+                        coverUrls.push(url);
+                        resolve(url);
+                    } else {
+                        resolve(undefined);
+                    }
+                },
+                onError: (error: any) => {
+                    clearTimeout(timeout);
+                    console.warn('Metadata extraction error:', error);
+                    resolve(undefined);
+                }
+            });
+        } catch (error) {
+            clearTimeout(timeout);
+            console.warn('JSmediatags crash:', error);
+            resolve(undefined);
+        }
+    });
+}
 
 const STATIC_TRACKS = [
     '/track.mp3',
@@ -40,18 +82,31 @@ const STATIC_TRACKS = [
 ];
 
 export async function loadStaticTracks(): Promise<void> {
-    const loadedTracks: Track[] = await Promise.all(
-        STATIC_TRACKS.map(async (url) => {
-            const name = url.split('/').pop() || 'Unknown';
-            return {
-                id: crypto.randomUUID(),
-                name,
-                url,
-                duration: 0,
-                blob: new Blob()
-            };
+    const results = await Promise.all(
+        STATIC_TRACKS.map(async (url): Promise<Track | null> => {
+            try {
+                const name = url.split('/').pop() || 'Unknown';
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const blob = await response.blob();
+                const coverUrl = await extractCover(blob);
+                
+                return {
+                    id: crypto.randomUUID(),
+                    name,
+                    url,
+                    coverUrl,
+                    duration: 0,
+                    blob
+                };
+            } catch (err) {
+                console.warn(`Failed to load static track ${url}:`, err);
+                return null;
+            }
         })
     );
+    
+    const loadedTracks: Track[] = results.filter((t): t is Track => t !== null);
     
     tracks.set(loadedTracks);
     if (loadedTracks.length > 0) {
@@ -59,14 +114,20 @@ export async function loadStaticTracks(): Promise<void> {
     }
 }
 
-export function addTracks(files: File[]): void {
-    const newTracks: Track[] = files.map((file) => ({
-        id: crypto.randomUUID(),
-        name: file.name,
-        url: URL.createObjectURL(file),
-        duration: 0,
-        blob: file
-    }));
+export async function addTracks(files: File[]): Promise<void> {
+    const newTracks: Track[] = await Promise.all(
+        files.map(async (file) => {
+            const coverUrl = await extractCover(file);
+            return {
+                id: crypto.randomUUID(),
+                name: file.name,
+                url: URL.createObjectURL(file),
+                coverUrl,
+                duration: 0,
+                blob: file
+            };
+        })
+    );
     
     objectUrls.push(...newTracks.map(t => t.url));
     
@@ -84,6 +145,11 @@ export function removeTrack(id: string): void {
             const track = t[index];
             URL.revokeObjectURL(track.url);
             objectUrls = objectUrls.filter(url => url !== track.url);
+            
+            if (track.coverUrl) {
+                URL.revokeObjectURL(track.coverUrl);
+                coverUrls = coverUrls.filter(url => url !== track.coverUrl);
+            }
             
             const current = get(currentIndex);
             if (index < current) {
@@ -149,9 +215,29 @@ export function moveTrack(fromIndex: number, toIndex: number): void {
     });
 }
 
+export function updateTrackCover(id: string, file: File): void {
+    const url = URL.createObjectURL(file);
+    coverUrls.push(url);
+    
+    tracks.update($tracks => {
+        return $tracks.map(t => {
+            if (t.id === id) {
+                if (t.coverUrl && !t.coverUrl.startsWith('/')) { // Only revoke if it's a blob URL
+                     URL.revokeObjectURL(t.coverUrl);
+                     coverUrls = coverUrls.filter(u => u !== t.coverUrl);
+                }
+                return { ...t, coverUrl: url, customCover: true };
+            }
+            return t;
+        });
+    });
+}
+
 export function cleanup(): void {
     objectUrls.forEach(url => URL.revokeObjectURL(url));
+    coverUrls.forEach(url => URL.revokeObjectURL(url));
     objectUrls = [];
+    coverUrls = [];
     tracks.set([]);
     currentIndex.set(0);
     isPlaying.set(false);
